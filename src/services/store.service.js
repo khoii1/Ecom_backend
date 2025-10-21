@@ -10,8 +10,11 @@ export const StoreService = {
       currentUser.role === ROLES.ADMIN && payload.owner_id
         ? payload.owner_id
         : currentUser.id;
+
+    // Đơn giản hóa: slug optional, không bắt buộc unique
     const slug =
       payload.slug || slugify(payload.name, { lower: true, strict: true });
+
     return StoreModel.create({
       owner_id,
       name: payload.name,

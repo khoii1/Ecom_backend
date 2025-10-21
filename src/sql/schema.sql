@@ -17,7 +17,6 @@ CREATE TABLE IF NOT EXISTS stores (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   owner_id UUID NOT NULL REFERENCES users(id),
   name TEXT NOT NULL,
-  slug TEXT UNIQUE NOT NULL,
   status TEXT DEFAULT 'active',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -27,26 +26,22 @@ CREATE TABLE IF NOT EXISTS stores (
 CREATE TABLE IF NOT EXISTS categories (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
-  slug TEXT UNIQUE NOT NULL,
   parent_id UUID REFERENCES categories(id),
+  created_by UUID REFERENCES users(id),
+  updated_by UUID REFERENCES users(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Thêm cột created_by và updated_by
-ALTER TABLE categories 
-ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES users(id),
-ADD COLUMN IF NOT EXISTS updated_by UUID REFERENCES users(id);
-
 -- Tạo index để query nhanh hơn
 CREATE INDEX IF NOT EXISTS idx_categories_created_by ON categories(created_by);
+CREATE INDEX IF NOT EXISTS idx_categories_updated_by ON categories(updated_by);
 
 -- 4) PRODUCTS
 CREATE TABLE IF NOT EXISTS products (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   store_id UUID NOT NULL REFERENCES stores(id),
   title TEXT NOT NULL,
-  slug TEXT UNIQUE NOT NULL,
   category_id UUID REFERENCES categories(id),
   has_variants BOOLEAN DEFAULT FALSE,
   price NUMERIC(12,2) NOT NULL,
@@ -114,3 +109,42 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   used BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- INDEXES FOR PERFORMANCE
+-- User indexes
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
+
+-- Store indexes  
+CREATE INDEX IF NOT EXISTS idx_stores_owner_id ON stores(owner_id);
+CREATE INDEX IF NOT EXISTS idx_stores_status ON stores(status);
+
+-- Product indexes
+CREATE INDEX IF NOT EXISTS idx_products_store_id ON products(store_id);
+CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
+CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
+
+-- Cart indexes
+CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON cart_items(cart_id);
+CREATE INDEX IF NOT EXISTS idx_cart_items_product_id ON cart_items(product_id);
+
+-- Order indexes
+CREATE INDEX IF NOT EXISTS idx_orders_buyer_id ON orders(buyer_id);
+CREATE INDEX IF NOT EXISTS idx_orders_store_id ON orders(store_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_orders_code ON orders(code);
+
+-- Order items indexes
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
+
+-- Auth token indexes
+CREATE INDEX IF NOT EXISTS idx_auth_tokens_user_id ON auth_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_auth_tokens_expires_at ON auth_tokens(expires_at);
+
+-- Password reset token indexes
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token_hash ON password_reset_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires_at ON password_reset_tokens(expires_at);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_purpose ON password_reset_tokens(purpose);
