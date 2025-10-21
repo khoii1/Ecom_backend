@@ -23,14 +23,14 @@ export const StoreService = {
     const store = await StoreModel.findById(id);
     if (!store) return null;
     if (currentUser.role !== ROLES.ADMIN && store.owner_id !== currentUser.id)
-      throw new Error("FORBIDDEN");
+      throw new Error("Bạn không có quyền chỉnh sửa cửa hàng này");
     return StoreModel.updateById(id, patch);
   },
   async remove(currentUser, id) {
     const store = await StoreModel.findById(id);
     if (!store) return true;
     if (currentUser.role !== ROLES.ADMIN && store.owner_id !== currentUser.id)
-      throw new Error("FORBIDDEN");
+      throw new Error("Bạn không có quyền xóa cửa hàng này");
     return StoreModel.deleteById(id);
   },
 };

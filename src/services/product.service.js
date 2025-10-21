@@ -8,9 +8,9 @@ export const ProductService = {
   detail: (id) => ProductModel.findById(id),
   async create(currentUser, payload) {
     const store = await StoreModel.findById(payload.store_id);
-    if (!store) throw new Error("STORE_NOT_FOUND");
+    if (!store) throw new Error("Không tìm thấy cửa hàng");
     if (currentUser.role !== ROLES.ADMIN && store.owner_id !== currentUser.id)
-      throw new Error("FORBIDDEN");
+      throw new Error("Bạn không có quyền thêm sản phẩm vào cửa hàng này");
     const slug =
       payload.slug || slugify(payload.title, { lower: true, strict: true });
     return ProductModel.create({ ...payload, slug });
@@ -21,7 +21,7 @@ export const ProductService = {
     if (currentUser.role !== ROLES.ADMIN) {
       const store = await StoreModel.findById(product.store_id);
       if (!store || store.owner_id !== currentUser.id)
-        throw new Error("FORBIDDEN");
+        throw new Error("Bạn không có quyền chỉnh sửa sản phẩm này");
     }
     return ProductModel.updateById(id, patch);
   },
@@ -31,7 +31,7 @@ export const ProductService = {
     if (currentUser.role !== ROLES.ADMIN) {
       const store = await StoreModel.findById(product.store_id);
       if (!store || store.owner_id !== currentUser.id)
-        throw new Error("FORBIDDEN");
+        throw new Error("Bạn không có quyền xóa sản phẩm này");
     }
     return ProductModel.deleteById(id);
   },

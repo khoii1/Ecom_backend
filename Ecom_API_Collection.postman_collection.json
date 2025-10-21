@@ -48,22 +48,22 @@
     },
     {
       "key": "user_id",
-      "value": "",
+      "value": "550e8400-e29b-41d4-a716-446655440004",
       "type": "string"
     },
     {
       "key": "store_id",
-      "value": "",
+      "value": "770e8400-e29b-41d4-a716-446655440001",
       "type": "string"
     },
     {
       "key": "product_id",
-      "value": "",
+      "value": "880e8400-e29b-41d4-a716-446655440001",
       "type": "string"
     },
     {
       "key": "category_id",
-      "value": "",
+      "value": "660e8400-e29b-41d4-a716-446655440001",
       "type": "string"
     }
   ],
@@ -91,8 +91,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "if (pm.response.code === 200) {",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
                   "    const responseJson = pm.response.json();",
+                  "    if (responseJson.id) {",
+                  "        pm.collectionVariables.set('user_id', responseJson.id);",
+                  "        console.log('User ID saved:', responseJson.id);",
+                  "    }",
                   "    console.log('Registration successful');",
                   "}"
                 ],
@@ -110,7 +114,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fullName\": \"Nguyễn Văn A\",\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"USER\"\n}"
+              "raw": "{\n  \"fullName\": \"Nguyễn Văn Khôi\",\n  \"email\": \"khoi.nguyen@gmail.com\",\n  \"password\": \"password123\",\n  \"role\": \"USER\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/register",
@@ -132,7 +136,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"code\": \"123456\"\n}"
+              "raw": "{\n  \"email\": \"khoi.nguyen@gmail.com\",\n  \"code\": \"123456\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/verify-email",
@@ -170,7 +174,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+              "raw": "{\n  \"email\": \"khoi.nguyen@gmail.com\",\n  \"password\": \"password123\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/login",
@@ -251,7 +255,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+              "raw": "{\n  \"email\": \"khoi.nguyen@gmail.com\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/forgot-password",
@@ -273,7 +277,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"code\": \"123456\",\n  \"newPassword\": \"newPassword123\"\n}"
+              "raw": "{\n  \"email\": \"khoi.nguyen@gmail.com\",\n  \"code\": \"123456\",\n  \"newPassword\": \"newPassword123\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/reset-password",
@@ -333,7 +337,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"full_name\": \"Nguyễn Văn A Updated\",\n  \"email\": \"newemail@example.com\"\n}"
+              "raw": "{\n  \"full_name\": \"Nguyễn Văn Khôi - Updated\",\n  \"email\": \"khoi.updated@gmail.com\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/users/profile/me",
@@ -431,7 +435,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"full_name\": \"Nguyễn Văn B\",\n  \"email\": \"newuser@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"USER\",\n  \"status\": \"active\"\n}"
+              "raw": "{\n  \"full_name\": \"Trần Thị Mai\",\n  \"email\": \"mai.tran@gmail.com\",\n  \"password\": \"password123\",\n  \"role\": \"SELLER\",\n  \"status\": \"active\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/users",
@@ -463,7 +467,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"full_name\": \"Nguyễn Văn B Updated\",\n  \"role\": \"SELLER\",\n  \"status\": \"active\"\n}"
+              "raw": "{\n  \"full_name\": \"Trần Thị Mai - Updated\",\n  \"role\": \"ADMIN\",\n  \"status\": \"active\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/users/:userId",
@@ -576,7 +580,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Cửa hàng ABC\",\n  \"slug\": \"cua-hang-abc\"\n}"
+              "raw": "{\n  \"name\": \"TechStore Vietnam\",\n  \"slug\": \"techstore-vietnam\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/stores",
@@ -608,7 +612,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Cửa hàng ABC Updated\",\n  \"status\": \"active\"\n}"
+              "raw": "{\n  \"name\": \"TechStore Vietnam - Premium\",\n  \"status\": \"active\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/stores/{{store_id}}",
@@ -709,7 +713,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Điện thoại\",\n  \"slug\": \"dien-thoai\",\n  \"parent_id\": null\n}"
+              "raw": "{\n  \"name\": \"Smartphone & Tablet\",\n  \"slug\": \"smartphone-tablet\",\n  \"parent_id\": null\n}"
             },
             "url": {
               "raw": "{{base_url}}/categories",
@@ -741,7 +745,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Điện thoại thông minh\"\n}"
+              "raw": "{\n  \"name\": \"Smartphone & Tablet Premium\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/categories/{{category_id}}",
@@ -842,7 +846,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"store_id\": \"{{store_id}}\",\n  \"title\": \"iPhone 15 Pro\",\n  \"category_id\": \"{{category_id}}\",\n  \"price\": 25000000,\n  \"image_url\": \"https://example.com/iphone15pro.jpg\",\n  \"has_variants\": false,\n  \"status\": \"active\"\n}"
+              "raw": "{\n  \"store_id\": \"{{store_id}}\",\n  \"title\": \"iPhone 15 Pro Max 256GB - Natural Titanium\",\n  \"category_id\": \"{{category_id}}\",\n  \"price\": 29990000,\n  \"image_url\": \"https://cdn.tgdd.vn/Products/Images/42/305658/iphone-15-pro-max-natural-titanium-1-1.jpg\",\n  \"has_variants\": true,\n  \"status\": \"active\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/products",
@@ -874,7 +878,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"iPhone 15 Pro Max\",\n  \"price\": 30000000\n}"
+              "raw": "{\n  \"title\": \"iPhone 15 Pro Max 512GB - Natural Titanium\",\n  \"price\": 34990000\n}"
             },
             "url": {
               "raw": "{{base_url}}/products/{{product_id}}",
@@ -957,7 +961,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"product_id\": \"{{product_id}}\",\n  \"qty\": 2\n}"
+              "raw": "{\n  \"product_id\": \"{{product_id}}\",\n  \"qty\": 1\n}"
             },
             "url": {
               "raw": "{{base_url}}/cart/items",
@@ -989,7 +993,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"qty\": 3\n}"
+              "raw": "{\n  \"qty\": 2\n}"
             },
             "url": {
               "raw": "{{base_url}}/cart/items/:itemId",

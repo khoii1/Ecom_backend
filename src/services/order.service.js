@@ -82,7 +82,7 @@ export const OrderService = {
         [order.store_id]
       );
       if (!store.rows.length || store.rows[0].owner_id !== currentUser.id) {
-        throw new Error("FORBIDDEN");
+        throw new Error("Bạn không có quyền cập nhật đơn hàng này");
       }
     }
 
