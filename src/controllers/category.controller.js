@@ -2,13 +2,21 @@ import { CategoryService } from "../services/category.service.js";
 import { handle } from "./base.controller.js";
 
 export const CategoryController = {
-  list: handle(async (req, res) => res.json(await CategoryService.list())),
+  list: handle(async (req, res) => {
+    const categories = await CategoryService.list(req.currentUser);
+    res.json(categories);
+  }),
+
   detail: handle(async (req, res) => {
-    const data = await CategoryService.detail(req.params.categoryId);
+    const data = await CategoryService.detail(
+      req.params.categoryId,
+      req.currentUser
+    );
     if (!data)
       return res.status(404).json({ message: "Danh mục không tồn tại" });
     res.json(data);
   }),
+
   create: handle(async (req, res) => {
     const created = await CategoryService.create(
       req.currentUser || {},
@@ -28,11 +36,9 @@ export const CategoryController = {
       res.json(updated);
     } catch (e) {
       if (e.message.includes("không có quyền") || e.message === "FORBIDDEN")
-        return res
-          .status(403)
-          .json({
-            message: e.message === "FORBIDDEN" ? "Không được phép" : e.message,
-          });
+        return res.status(403).json({
+          message: e.message === "FORBIDDEN" ? "Không được phép" : e.message,
+        });
       throw e;
     }
   }),
@@ -45,11 +51,9 @@ export const CategoryController = {
       res.json({ message: "Xóa danh mục thành công" });
     } catch (e) {
       if (e.message.includes("không có quyền") || e.message === "FORBIDDEN")
-        return res
-          .status(403)
-          .json({
-            message: e.message === "FORBIDDEN" ? "Không được phép" : e.message,
-          });
+        return res.status(403).json({
+          message: e.message === "FORBIDDEN" ? "Không được phép" : e.message,
+        });
       throw e;
     }
   }),

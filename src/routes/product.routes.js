@@ -3,6 +3,7 @@ import { body, param, query } from "express-validator";
 import { ProductController } from "../controllers/product.controller.js";
 import { authentication } from "../middleware/authentication.js";
 import { authorizeByRoles } from "../middleware/authorization.js";
+import { uploadSingle } from "../middleware/upload.js";
 import { ROLES } from "../constants/roles.js";
 
 const router = Router();
@@ -90,6 +91,15 @@ router.delete(
   authentication(),
   productIdValidation,
   ProductController.remove
+);
+
+// Upload image endpoint
+router.post(
+  "/upload-image",
+  authentication(),
+  authorizeByRoles([ROLES.SELLER, ROLES.ADMIN]),
+  uploadSingle("image"),
+  ProductController.uploadImage
 );
 
 export default router;

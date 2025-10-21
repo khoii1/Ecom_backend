@@ -65,6 +65,11 @@
       "key": "category_id",
       "value": "660e8400-e29b-41d4-a716-446655440001",
       "type": "string"
+    },
+    {
+      "key": "uploaded_image_url",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -857,6 +862,53 @@
           "response": []
         },
         {
+          "name": "Create Product with Uploaded Image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.collectionVariables.set('product_id', responseJson.id);",
+                  "    console.log('Product created with uploaded image, ID saved:', responseJson.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"store_id\": \"{{store_id}}\",\n  \"title\": \"Samsung Galaxy S24 Ultra 512GB - Titanium Black\",\n  \"category_id\": \"{{category_id}}\",\n  \"price\": 31990000,\n  \"image_url\": \"{{uploaded_image_url}}\",\n  \"has_variants\": true,\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/products",
+              "host": ["{{base_url}}"],
+              "path": ["products"]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Update Product",
           "request": {
             "auth": {
@@ -907,6 +959,57 @@
               "raw": "{{base_url}}/products/{{product_id}}",
               "host": ["{{base_url}}"],
               "path": ["products", "{{product_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Product Image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const responseJson = pm.response.json();",
+                  "    if (responseJson.image_url) {",
+                  "        console.log('Image uploaded successfully:', responseJson.image_url);",
+                  "        // Có thể lưu URL vào variable để dùng cho Create Product",
+                  "        pm.collectionVariables.set('uploaded_image_url', responseJson.image_url);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/products/upload-image",
+              "host": ["{{base_url}}"],
+              "path": ["products", "upload-image"]
             }
           },
           "response": []

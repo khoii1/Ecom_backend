@@ -47,21 +47,21 @@ router.get("/:categoryId", categoryIdValidation, CategoryController.detail);
 router.post(
   "/",
   authentication(),
-  authorizeByRoles([ROLES.ADMIN]),
+  authorizeByRoles([ROLES.ADMIN, ROLES.SELLER]),
   createCategoryValidation,
   CategoryController.create
 );
 router.put(
   "/:categoryId",
   authentication(),
-  authorizeByRoles([ROLES.ADMIN]),
+  authorizeByRoles([ROLES.ADMIN, ROLES.SELLER]),
   updateCategoryValidation,
   CategoryController.update
 );
 router.delete(
   "/:categoryId",
   authentication(),
-  authorizeByRoles([ROLES.ADMIN]),
+  authorizeByRoles([ROLES.ADMIN, ROLES.SELLER]),
   categoryIdValidation,
   CategoryController.remove
 );

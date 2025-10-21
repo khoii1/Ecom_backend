@@ -33,6 +33,14 @@ CREATE TABLE IF NOT EXISTS categories (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Thêm cột created_by và updated_by
+ALTER TABLE categories 
+ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES users(id),
+ADD COLUMN IF NOT EXISTS updated_by UUID REFERENCES users(id);
+
+-- Tạo index để query nhanh hơn
+CREATE INDEX IF NOT EXISTS idx_categories_created_by ON categories(created_by);
+
 -- 4) PRODUCTS
 CREATE TABLE IF NOT EXISTS products (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

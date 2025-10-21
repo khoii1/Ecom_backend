@@ -50,4 +50,30 @@ export const ProductController = {
       throw e;
     }
   }),
+
+  // Upload hình ảnh cho sản phẩm
+  uploadImage: handle(async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({
+        message: "Vui lòng chọn file hình ảnh để upload",
+      });
+    }
+
+    // Cloudinary tự động trả về secure_url sau khi upload
+    const imageUrl = req.file.path; // Cloudinary URL
+    const publicId = req.file.filename; // Cloudinary public_id
+
+    res.json({
+      message: "Upload hình ảnh thành công",
+      image_url: imageUrl,
+      public_id: publicId,
+      file_info: {
+        original_filename: req.file.originalname,
+        size: req.file.size,
+        format: req.file.format,
+        width: req.file.width,
+        height: req.file.height,
+      },
+    });
+  }),
 };
