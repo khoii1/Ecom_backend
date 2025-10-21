@@ -17,11 +17,6 @@ const createCategoryValidation = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage("Tên danh mục phải từ 2-100 ký tự"),
-  body("slug")
-    .optional()
-    .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage("Slug phải từ 2-100 ký tự"),
   body("parent_id")
     .optional()
     .isUUID()
@@ -41,27 +36,31 @@ const updateCategoryValidation = [
     .withMessage("ID danh mục cha không hợp lệ"),
 ];
 
-// Routes
+// PUBLIC ROUTES - Không cần authentication
 router.get("/", CategoryController.list);
+router.get("/stats", CategoryController.listWithStats);
+router.get("/tree", CategoryController.tree);
 router.get("/:categoryId", categoryIdValidation, CategoryController.detail);
+
+// ADMIN ONLY ROUTES - Cần authentication + admin role
 router.post(
   "/",
   authentication(),
-  authorizeByRoles([ROLES.ADMIN, ROLES.SELLER]),
+  authorizeByRoles([ROLES.ADMIN]),
   createCategoryValidation,
   CategoryController.create
 );
 router.put(
   "/:categoryId",
   authentication(),
-  authorizeByRoles([ROLES.ADMIN, ROLES.SELLER]),
+  authorizeByRoles([ROLES.ADMIN]),
   updateCategoryValidation,
   CategoryController.update
 );
 router.delete(
   "/:categoryId",
   authentication(),
-  authorizeByRoles([ROLES.ADMIN, ROLES.SELLER]),
+  authorizeByRoles([ROLES.ADMIN]),
   categoryIdValidation,
   CategoryController.remove
 );

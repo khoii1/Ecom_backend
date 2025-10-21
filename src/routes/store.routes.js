@@ -19,11 +19,6 @@ const createStoreValidation = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage("Tên cửa hàng phải từ 2-100 ký tự"),
-  body("slug")
-    .optional()
-    .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage("Slug phải từ 2-100 ký tự"),
   validate,
 ];
 
@@ -43,6 +38,12 @@ const updateStoreValidation = [
 
 // Routes
 router.get("/", StoreController.list);
+router.get(
+  "/my/stores",
+  authentication(),
+  authorizeByRoles([ROLES.SELLER, ROLES.ADMIN]),
+  StoreController.myStores
+);
 router.get("/:storeId", storeIdValidation, StoreController.detail);
 router.post(
   "/",

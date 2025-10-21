@@ -22,20 +22,18 @@ CREATE TABLE IF NOT EXISTS stores (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3) CATEGORIES
+-- 3) CATEGORIES (Global - Admin only)
 CREATE TABLE IF NOT EXISTS categories (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
   parent_id UUID REFERENCES categories(id),
-  created_by UUID REFERENCES users(id),
-  updated_by UUID REFERENCES users(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Tạo index để query nhanh hơn
-CREATE INDEX IF NOT EXISTS idx_categories_created_by ON categories(created_by);
-CREATE INDEX IF NOT EXISTS idx_categories_updated_by ON categories(updated_by);
+CREATE INDEX IF NOT EXISTS idx_categories_name ON categories(name);
+CREATE INDEX IF NOT EXISTS idx_categories_parent_id ON categories(parent_id);
 
 -- 4) PRODUCTS
 CREATE TABLE IF NOT EXISTS products (

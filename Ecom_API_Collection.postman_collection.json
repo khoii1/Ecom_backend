@@ -119,7 +119,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fullName\": \"Nguyễn Văn Khôi\",\n  \"email\": \"khoi.nguyen@gmail.com\",\n  \"password\": \"password123\",\n  \"role\": \"USER\"\n}"
+              "raw": "{\n  \"fullName\": \"Nguyễn Văn Khôi - Seller\",\n  \"email\": \"khoi.seller@gmail.com\",\n  \"password\": \"password123\",\n  \"role\": \"SELLER\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/register",
@@ -141,7 +141,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"khoi.nguyen@gmail.com\",\n  \"code\": \"123456\"\n}"
+              "raw": "{\n  \"email\": \"khoi.seller@gmail.com\",\n  \"code\": \"123456\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/verify-email",
@@ -179,7 +179,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"khoi.nguyen@gmail.com\",\n  \"password\": \"password123\"\n}"
+              "raw": "{\n  \"email\": \"khoi.seller@gmail.com\",\n  \"password\": \"password123\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/login",
@@ -536,6 +536,46 @@
           "response": []
         },
         {
+          "name": "Get My Stores (Seller)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const responseJson = pm.response.json();",
+                  "    if (responseJson.length > 0 && responseJson[0].id) {",
+                  "        pm.collectionVariables.set('store_id', responseJson[0].id);",
+                  "        console.log('Default store ID saved:', responseJson[0].id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/stores/my/stores",
+              "host": ["{{base_url}}"],
+              "path": ["stores", "my", "stores"]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Get Store by ID",
           "request": {
             "method": "GET",
@@ -585,7 +625,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"TechStore Vietnam\",\n  \"slug\": \"techstore-vietnam\"\n}"
+              "raw": "{\n  \"name\": \"TechStore Vietnam\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/stores",
@@ -682,6 +722,32 @@
           "response": []
         },
         {
+          "name": "Get Categories with Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories/stats",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "stats"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Categories Tree",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories/tree",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "tree"]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Create Category (Admin)",
           "event": [
             {
@@ -690,8 +756,11 @@
                 "exec": [
                   "if (pm.response.code === 201) {",
                   "    const responseJson = pm.response.json();",
-                  "    pm.collectionVariables.set('category_id', responseJson.id);",
-                  "    console.log('Category created, ID saved:', responseJson.id);",
+                  "    if (responseJson.data && responseJson.data.id) {",
+                  "        pm.collectionVariables.set('category_id', responseJson.data.id);",
+                  "        console.log('Category created, ID saved:', responseJson.data.id);",
+                  "    }",
+                  "    console.log('Response:', responseJson.message);",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -718,7 +787,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Smartphone & Tablet\",\n  \"slug\": \"smartphone-tablet\",\n  \"parent_id\": null\n}"
+              "raw": "{\n  \"name\": \"Điện thoại & Máy tính bảng\",\n  \"parent_id\": null\n}"
             },
             "url": {
               "raw": "{{base_url}}/categories",

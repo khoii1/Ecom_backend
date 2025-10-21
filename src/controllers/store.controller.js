@@ -3,6 +3,13 @@ import { handle } from "./base.controller.js";
 
 export const StoreController = {
   list: handle(async (req, res) => res.json(await StoreService.list())),
+
+  // Lấy stores của user hiện tại (for sellers)
+  myStores: handle(async (req, res) => {
+    const stores = await StoreService.listByOwner(req.currentUser.id);
+    res.json(stores);
+  }),
+
   detail: handle(async (req, res) => {
     const data = await StoreService.detail(req.params.storeId);
     if (!data)
