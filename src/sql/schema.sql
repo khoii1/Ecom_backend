@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS products (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   store_id UUID NOT NULL REFERENCES stores(id),
   title TEXT NOT NULL,
+  description TEXT,
   category_id UUID REFERENCES categories(id),
   price NUMERIC(12,2) NOT NULL,
   discounted_price NUMERIC(12,2) CHECK (discounted_price IS NULL OR discounted_price >= 0),

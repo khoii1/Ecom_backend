@@ -6,6 +6,7 @@ export const ProductModel = {
   create: ({
     store_id,
     title,
+    description = null,
     category_id = null,
     price,
     discounted_price = null,
@@ -18,6 +19,7 @@ export const ProductModel = {
       columns: [
         "store_id",
         "title",
+        "description",
         "category_id",
         "price",
         "discounted_price",
@@ -28,6 +30,7 @@ export const ProductModel = {
       values: [
         store_id,
         title,
+        description,
         category_id,
         price,
         discounted_price,

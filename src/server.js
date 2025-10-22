@@ -1,4 +1,6 @@
 import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -14,15 +16,21 @@ import cartRoutes from "./routes/cart.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import cartItemRoutes from "./routes/cart_item.routes.js";
 import orderItemRoutes from "./routes/order_item.routes.js";
-import authTokenRoutes from "./routes/auth_token.routes.js";
 import passwordResetTokenRoutes from "./routes/password_reset_token.routes.js";
 
 const app = express();
+
+// Get current directory for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Global middleware
 app.use(corsMiddleware);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Serve static files for admin panel
+app.use("/admin", express.static(path.join(__dirname, "../public/admin")));
 
 // Health check endpoint
 app.get("/", (req, res) =>
@@ -43,7 +51,6 @@ app.use("/cart", cartRoutes);
 app.use("/orders", orderRoutes);
 app.use("/cart-items", cartItemRoutes);
 app.use("/order-items", orderItemRoutes);
-app.use("/auth-tokens", authTokenRoutes);
 app.use("/password-reset-tokens", passwordResetTokenRoutes);
 
 // Error handling middleware (must be last)
@@ -51,6 +58,7 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 const port = process.env.PORT || 8080;
-app.listen(port, () =>
-  console.log(`Server đang chạy tại http://localhost:${port}`)
-);
+app.listen(port, () => {
+  console.log(`Server đang chạy tại http://localhost:${port}`);
+  console.log(`Admin Panel: http://localhost:${port}/admin/login.html`);
+});
