@@ -4,6 +4,7 @@ import { ProductController } from "../controllers/product.controller.js";
 import { authentication } from "../middleware/authentication.js";
 import { authorizeByRoles } from "../middleware/authorization.js";
 import { uploadSingle } from "../middleware/upload.js";
+import { validate } from "../middleware/validation.js";
 import { ROLES } from "../constants/roles.js";
 
 const router = Router();
@@ -19,24 +20,36 @@ const createProductValidation = [
     .trim()
     .isLength({ min: 2, max: 200 })
     .withMessage("Tiêu đề sản phẩm phải từ 2-200 ký tự"),
-  body("slug")
-    .optional()
-    .trim()
-    .isLength({ min: 2, max: 200 })
-    .withMessage("Slug phải từ 2-200 ký tự"),
   body("category_id")
     .optional()
     .isUUID()
     .withMessage("ID danh mục không hợp lệ"),
   body("price")
     .isNumeric()
+    .toFloat()
     .isFloat({ min: 0 })
     .withMessage("Giá phải là số dương"),
-  body("image_url").optional().isURL().withMessage("URL hình ảnh không hợp lệ"),
-  body("has_variants")
+  body("discounted_price")
     .optional()
-    .isBoolean()
-    .withMessage("has_variants phải là boolean"),
+    .isNumeric()
+    .toFloat()
+    .isFloat({ min: 0 })
+    .custom((value, { req }) => {
+      if (value && req.body.price) {
+        const price = parseFloat(req.body.price);
+        if (value > price) {
+          throw new Error("Giá sau giảm phải nhỏ hơn hoặc bằng giá gốc");
+        }
+      }
+      return true;
+    }),
+  body("rating")
+    .optional()
+    .isNumeric()
+    .toFloat()
+    .isFloat({ min: 0, max: 5 })
+    .withMessage("Đánh giá phải từ 0 đến 5"),
+  body("image_url").optional().isURL().withMessage("URL hình ảnh không hợp lệ"),
   body("status")
     .optional()
     .isIn(["active", "inactive"])
@@ -57,13 +70,30 @@ const updateProductValidation = [
   body("price")
     .optional()
     .isNumeric()
+    .toFloat()
     .isFloat({ min: 0 })
     .withMessage("Giá phải là số dương"),
-  body("image_url").optional().isURL().withMessage("URL hình ảnh không hợp lệ"),
-  body("has_variants")
+  body("discounted_price")
     .optional()
-    .isBoolean()
-    .withMessage("has_variants phải là boolean"),
+    .isNumeric()
+    .toFloat()
+    .isFloat({ min: 0 })
+    .custom((value, { req }) => {
+      if (value && req.body.price) {
+        const price = parseFloat(req.body.price);
+        if (value > price) {
+          throw new Error("Giá sau giảm phải nhỏ hơn hoặc bằng giá gốc");
+        }
+      }
+      return true;
+    }),
+  body("rating")
+    .optional()
+    .isNumeric()
+    .toFloat()
+    .isFloat({ min: 0, max: 5 })
+    .withMessage("Đánh giá phải từ 0 đến 5"),
+  body("image_url").optional().isURL().withMessage("URL hình ảnh không hợp lệ"),
   body("status")
     .optional()
     .isIn(["active", "inactive"])
@@ -78,12 +108,40 @@ router.post(
   authentication(),
   authorizeByRoles([ROLES.SELLER, ROLES.ADMIN]),
   createProductValidation,
+  validate,
+  (req, res, next) => {
+    // Ensure price fields are numbers
+    if (req.body.price) {
+      req.body.price = parseFloat(req.body.price);
+    }
+    if (req.body.discounted_price) {
+      req.body.discounted_price = parseFloat(req.body.discounted_price);
+    }
+    if (req.body.rating) {
+      req.body.rating = parseFloat(req.body.rating);
+    }
+    next();
+  },
   ProductController.create
 );
 router.put(
   "/:productId",
   authentication(),
   updateProductValidation,
+  validate,
+  (req, res, next) => {
+    // Ensure price fields are numbers
+    if (req.body.price) {
+      req.body.price = parseFloat(req.body.price);
+    }
+    if (req.body.discounted_price) {
+      req.body.discounted_price = parseFloat(req.body.discounted_price);
+    }
+    if (req.body.rating) {
+      req.body.rating = parseFloat(req.body.rating);
+    }
+    next();
+  },
   ProductController.update
 );
 router.delete(

@@ -920,7 +920,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"store_id\": \"{{store_id}}\",\n  \"title\": \"iPhone 15 Pro Max 256GB - Natural Titanium\",\n  \"category_id\": \"{{category_id}}\",\n  \"price\": 29990000,\n  \"image_url\": \"https://cdn.tgdd.vn/Products/Images/42/305658/iphone-15-pro-max-natural-titanium-1-1.jpg\",\n  \"has_variants\": true,\n  \"status\": \"active\"\n}"
+              "raw": "{\n  \"store_id\": \"{{store_id}}\",\n  \"title\": \"iPhone 15 Pro Max 256GB - Natural Titanium\",\n  \"category_id\": \"{{category_id}}\",\n  \"price\": 29990000,\n  \"discounted_price\": 27990000,\n  \"rating\": 4.8,\n  \"image_url\": \"https://cdn.tgdd.vn/Products/Images/42/305658/iphone-15-pro-max-natural-titanium-1-1.jpg\",\n  \"status\": \"active\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/products",
@@ -967,7 +967,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"store_id\": \"{{store_id}}\",\n  \"title\": \"Samsung Galaxy S24 Ultra 512GB - Titanium Black\",\n  \"category_id\": \"{{category_id}}\",\n  \"price\": 31990000,\n  \"image_url\": \"{{uploaded_image_url}}\",\n  \"has_variants\": true,\n  \"status\": \"active\"\n}"
+              "raw": "{\n  \"store_id\": \"{{store_id}}\",\n  \"title\": \"Samsung Galaxy S24 Ultra 512GB - Titanium Black\",\n  \"category_id\": \"{{category_id}}\",\n  \"price\": 31990000,\n  \"discounted_price\": 29990000,\n  \"rating\": 4.6,\n  \"image_url\": \"{{uploaded_image_url}}\",\n  \"status\": \"active\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/products",
