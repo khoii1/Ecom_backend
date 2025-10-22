@@ -89,16 +89,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   qty INTEGER NOT NULL CHECK (qty > 0)
 );
 
--- 9) AUTH TOKENS
-CREATE TABLE IF NOT EXISTS auth_tokens (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES users(id),
-  refresh_token_hash TEXT NOT NULL,
-  expires_at TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 10) PASSWORD RESET / EMAIL VERIFY TOKENS
+-- 9) PASSWORD RESET / EMAIL VERIFY TOKENS
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES users(id),
@@ -137,10 +128,6 @@ CREATE INDEX IF NOT EXISTS idx_orders_code ON orders(code);
 -- Order items indexes
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
-
--- Auth token indexes
-CREATE INDEX IF NOT EXISTS idx_auth_tokens_user_id ON auth_tokens(user_id);
-CREATE INDEX IF NOT EXISTS idx_auth_tokens_expires_at ON auth_tokens(expires_at);
 
 -- Password reset token indexes
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);

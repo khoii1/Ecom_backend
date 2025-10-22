@@ -56,7 +56,6 @@ const resetPasswordValidation = [
 router.post("/register", registerValidation, AuthController.register);
 router.post("/verify-email", verifyEmailValidation, AuthController.verifyEmail);
 router.post("/login", loginValidation, AuthController.login);
-router.post("/refresh", AuthController.refresh);
 router.post("/logout", AuthController.logout);
 router.post(
   "/forgot-password",

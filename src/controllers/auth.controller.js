@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
 import { UserModel } from "../models/user.model.js";
-import { AuthTokenModel } from "../models/auth_token.model.js";
 import { PasswordResetTokenModel } from "../models/password_reset_token.model.js";
 import {
   hashPassword,
@@ -14,12 +13,7 @@ import { sendCodeEmail } from "../utils/email.js";
 const signAccess = (u) =>
   jwt.sign({ role: u.role }, process.env.JWT_ACCESS_SECRET, {
     subject: u.id,
-    expiresIn: process.env.JWT_ACCESS_EXPIRES || "15m",
-  });
-const signRefresh = (u) =>
-  jwt.sign({}, process.env.JWT_REFRESH_SECRET, {
-    subject: u.id,
-    expiresIn: process.env.JWT_REFRESH_EXPIRES || "30d",
+    expiresIn: process.env.JWT_ACCESS_EXPIRES || "24h", // Tăng thời gian sống lên 24h
   });
 
 export const AuthController = {
@@ -105,43 +99,21 @@ export const AuthController = {
     if (!ok)
       return res.status(401).json({ message: "Sai thông tin đăng nhập" });
     const access = signAccess(user);
-    const refresh = signRefresh(user);
-    await AuthTokenModel.create({
-      user_id: user.id,
-      refresh_token_hash: sha256(refresh),
-      expires_at: new Date(Date.now() + 30 * 24 * 3600 * 1000),
+    res.json({
+      access_token: access,
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        role: user.role,
+      },
     });
-    res.json({ access_token: access, refresh_token: refresh });
-  },
-
-  refresh: async (req, res) => {
-    const { refresh_token } = req.body || {};
-    if (!refresh_token)
-      return res.status(400).json({ message: "Thiếu refresh_token" });
-    try {
-      const payload = jwt.verify(refresh_token, process.env.JWT_REFRESH_SECRET);
-      const token = await AuthTokenModel.findByUserAndHash(
-        payload.sub,
-        sha256(refresh_token)
-      );
-      if (!token)
-        return res.status(401).json({ message: "Refresh token không hợp lệ" });
-      const user = await UserModel.findById(payload.sub);
-      const access = signAccess(user);
-      res.json({ access_token: access });
-    } catch {
-      res.status(401).json({ message: "Refresh token không hợp lệ" });
-    }
   },
 
   logout: async (req, res) => {
-    const { refresh_token } = req.body || {};
-    if (!refresh_token)
-      return res.status(400).json({ message: "Thiếu refresh_token" });
-    await (
-      await import("../models/auth_token.model.js")
-    ).AuthTokenModel.deleteByHash(sha256(refresh_token));
-    res.json({ message: "Đã đăng xuất" });
+    // Với JWT, logout chỉ cần client xóa token
+    // Server không cần làm gì thêm
+    res.json({ message: "Đã đăng xuất thành công" });
   },
 
   forgotPassword: async (req, res) => {
