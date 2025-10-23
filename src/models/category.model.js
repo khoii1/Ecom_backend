@@ -3,11 +3,11 @@ const tableName = "categories";
 export const CategoryModel = {
   findMany: (args = {}) => BaseModel.findMany({ tableName, ...args }),
   findById: (id) => BaseModel.findById({ tableName, id }),
-  create: ({ name, parent_id = null }) =>
+  create: ({ name, parent_id = null, image_url = null }) =>
     BaseModel.insert({
       tableName,
-      columns: ["name", "parent_id"],
-      values: [name, parent_id],
+      columns: ["name", "parent_id", "image_url"],
+      values: [name, parent_id, image_url],
     }),
   updateById: (id, patch) => BaseModel.updateById({ tableName, id, patch }),
   deleteById: (id) => BaseModel.deleteById({ tableName, id }),

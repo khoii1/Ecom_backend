@@ -30,6 +30,7 @@ export const CategoryService = {
     return CategoryModel.create({
       name: payload.name,
       parent_id: payload.parent_id || null,
+      image_url: payload.image_url || null,
     });
   },
 
@@ -49,6 +50,7 @@ export const CategoryService = {
     return CategoryModel.updateById(id, {
       name: patch.name,
       parent_id: patch.parent_id,
+      image_url: patch.image_url,
     });
   },
 
