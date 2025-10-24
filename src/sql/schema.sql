@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS products (
   description TEXT,
   category_id UUID REFERENCES categories(id),
   price NUMERIC(12,2) NOT NULL,
-  discounted_price NUMERIC(12,2) CHECK (discounted_price IS NULL OR discounted_price >= 0),
+  discount_percentage NUMERIC(5,2) CHECK (discount_percentage IS NULL OR (discount_percentage >= 0 AND discount_percentage <= 100)),
   rating NUMERIC(2,1) CHECK (rating IS NULL OR (rating >= 0 AND rating <= 5)),
   image_url TEXT,
   status TEXT DEFAULT 'active',

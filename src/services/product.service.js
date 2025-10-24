@@ -4,17 +4,45 @@ import { CartItemModel } from "../models/cart_item.model.js";
 import { ROLES } from "../constants/roles.js";
 
 export const ProductService = {
-  // Lấy tất cả products
-  list: () => ProductModel.findMany({}),
+  // Lấy tất cả products với final_price
+  list: () => ProductModel.findManyWithFinalPrice({}),
 
   // Lấy products theo store (cho seller)
-  listByStore: (storeId) => ProductModel.findByStoreId(storeId),
+  listByStore: async (storeId) => {
+    const products = await ProductModel.findByStoreId(storeId);
+    return products.map((product) => ({
+      ...product,
+      final_price: ProductModel.calculateFinalPrice(
+        product.price,
+        product.discount_percentage
+      ),
+    }));
+  },
 
   // Lấy products theo category (cho buyers)
-  listByCategory: (categoryId) => ProductModel.findByCategoryId(categoryId),
+  listByCategory: async (categoryId) => {
+    const products = await ProductModel.findByCategoryId(categoryId);
+    return products.map((product) => ({
+      ...product,
+      final_price: ProductModel.calculateFinalPrice(
+        product.price,
+        product.discount_percentage
+      ),
+    }));
+  },
 
-  // Chi tiết sản phẩm
-  detail: (id) => ProductModel.findById(id),
+  // Chi tiết sản phẩm với final_price
+  detail: async (id) => {
+    const product = await ProductModel.findById(id);
+    if (!product) return null;
+    return {
+      ...product,
+      final_price: ProductModel.calculateFinalPrice(
+        product.price,
+        product.discount_percentage
+      ),
+    };
+  },
 
   // Tạo sản phẩm - chỉ owner của store
   async create(currentUser, payload) {
@@ -28,10 +56,16 @@ export const ProductService = {
       throw new Error("Bạn không có quyền thêm sản phẩm vào cửa hàng này");
     }
 
-    // Validation business logic cho discounted_price
-    if (payload.discounted_price && payload.price) {
-      if (Number(payload.discounted_price) > Number(payload.price)) {
-        throw new Error("Giá sau giảm phải nhỏ hơn hoặc bằng giá gốc");
+    // Validation business logic cho discount_percentage
+    if (
+      payload.discount_percentage !== null &&
+      payload.discount_percentage !== undefined
+    ) {
+      if (
+        Number(payload.discount_percentage) < 0 ||
+        Number(payload.discount_percentage) > 100
+      ) {
+        throw new Error("Phần trăm giảm giá phải từ 0 đến 100");
       }
     }
 
@@ -53,11 +87,16 @@ export const ProductService = {
       }
     }
 
-    // Validation business logic cho discounted_price khi update
-    if (patch.discounted_price) {
-      const currentPrice = patch.price || product.price;
-      if (Number(patch.discounted_price) > Number(currentPrice)) {
-        throw new Error("Giá sau giảm phải nhỏ hơn hoặc bằng giá gốc");
+    // Validation business logic cho discount_percentage khi update
+    if (
+      patch.discount_percentage !== null &&
+      patch.discount_percentage !== undefined
+    ) {
+      if (
+        Number(patch.discount_percentage) < 0 ||
+        Number(patch.discount_percentage) > 100
+      ) {
+        throw new Error("Phần trăm giảm giá phải từ 0 đến 100");
       }
     }
 

@@ -9,7 +9,7 @@ export const ProductModel = {
     description = null,
     category_id = null,
     price,
-    discounted_price = null,
+    discount_percentage = null,
     rating = null,
     image_url = null,
     status = "active",
@@ -22,7 +22,7 @@ export const ProductModel = {
         "description",
         "category_id",
         "price",
-        "discounted_price",
+        "discount_percentage",
         "rating",
         "image_url",
         "status",
@@ -33,7 +33,7 @@ export const ProductModel = {
         description,
         category_id,
         price,
-        discounted_price,
+        discount_percentage,
         rating,
         image_url,
         status,
@@ -47,4 +47,25 @@ export const ProductModel = {
     BaseModel.findMany({ tableName, where: { store_id: storeId } }),
   findByCategoryId: (categoryId) =>
     BaseModel.findMany({ tableName, where: { category_id: categoryId } }),
+
+  // Tính toán giá sau khi giảm
+  calculateFinalPrice: (price, discountPercentage) => {
+    if (!discountPercentage || discountPercentage <= 0) {
+      return price;
+    }
+    const discountAmount = (price * discountPercentage) / 100;
+    return price - discountAmount;
+  },
+
+  // Lấy products với final_price được tính toán
+  findManyWithFinalPrice: async (args = {}) => {
+    const products = await BaseModel.findMany({ tableName, ...args });
+    return products.map((product) => ({
+      ...product,
+      final_price: ProductModel.calculateFinalPrice(
+        product.price,
+        product.discount_percentage
+      ),
+    }));
+  },
 };
