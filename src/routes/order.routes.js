@@ -10,12 +10,14 @@ const router = Router();
 
 // Validation middleware
 const orderIdValidation = [
-  param("orderId").isUUID().withMessage("ID đơn hàng không hợp lệ"),
+  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
+  param("orderId").isInt({ min: 1 }).withMessage("ID đơn hàng không hợp lệ"),
   validate,
 ];
 
 const storeIdValidation = [
-  param("storeId").isUUID().withMessage("ID cửa hàng không hợp lệ"),
+  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
+  param("storeId").isInt({ min: 1 }).withMessage("ID cửa hàng không hợp lệ"),
   validate,
 ];
 

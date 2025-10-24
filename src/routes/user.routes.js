@@ -66,7 +66,8 @@ const UserController = {
 
 // Validation middleware
 const userIdValidation = [
-  param("userId").isUUID().withMessage("ID người dùng không hợp lệ"),
+  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
+  param("userId").isInt({ min: 1 }).withMessage("ID người dùng không hợp lệ"),
   validate,
 ];
 

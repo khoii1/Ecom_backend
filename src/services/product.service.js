@@ -1,47 +1,64 @@
 import { ProductModel } from "../models/product.model.js";
 import { StoreModel } from "../models/store.model.js";
-import { CartItemModel } from "../models/cart_item.model.js";
+import { CartItemModel } from "../models/cart_item.model.js"; // Giữ lại import này
 import { ROLES } from "../constants/roles.js";
+
+// --- SỬA: BẮT ĐẦU THÊM MỚI ---
+// Helper functions để chuyển đổi ID thành String cho frontend
+const formatProductForFrontend = (product) => {
+  if (!product) return product;
+  // Tính toán final_price trước khi chuyển đổi ID
+  const finalPrice = ProductModel.calculateFinalPrice(
+    product.price,
+    product.discount_percentage
+  );
+  return {
+    ...product,
+    // Chuyển đổi ID (integer) thành String
+    id: product.id.toString(),
+    store_id: product.store_id.toString(),
+    // Chỉ chuyển đổi category_id nếu nó tồn tại
+    category_id: product.category_id ? product.category_id.toString() : null,
+    // Giữ lại final_price đã tính
+    final_price: finalPrice,
+  };
+};
+
+const formatProductsForFrontend = (products) => {
+  if (!Array.isArray(products)) return products;
+  // Áp dụng hàm format cho mỗi sản phẩm trong danh sách
+  return products.map(formatProductForFrontend);
+};
+// --- SỬA: KẾT THÚC THÊM MỚI ---
 
 export const ProductService = {
   // Lấy tất cả products với final_price
-  list: () => ProductModel.findManyWithFinalPrice({}),
+  // SỬA: Thay thế findManyWithFinalPrice bằng findMany + format
+  list: async () => {
+    const products = await ProductModel.findMany({});
+    return formatProductsForFrontend(products);
+  },
 
   // Lấy products theo store (cho seller)
+  // SỬA: Thêm async/await và hàm format
   listByStore: async (storeId) => {
     const products = await ProductModel.findByStoreId(storeId);
-    return products.map((product) => ({
-      ...product,
-      final_price: ProductModel.calculateFinalPrice(
-        product.price,
-        product.discount_percentage
-      ),
-    }));
+    return formatProductsForFrontend(products);
   },
 
   // Lấy products theo category (cho buyers)
+  // SỬA: Thêm async/await và hàm format
   listByCategory: async (categoryId) => {
     const products = await ProductModel.findByCategoryId(categoryId);
-    return products.map((product) => ({
-      ...product,
-      final_price: ProductModel.calculateFinalPrice(
-        product.price,
-        product.discount_percentage
-      ),
-    }));
+    return formatProductsForFrontend(products);
   },
 
   // Chi tiết sản phẩm với final_price
+  // SỬA: Thêm hàm format
   detail: async (id) => {
     const product = await ProductModel.findById(id);
-    if (!product) return null;
-    return {
-      ...product,
-      final_price: ProductModel.calculateFinalPrice(
-        product.price,
-        product.discount_percentage
-      ),
-    };
+    // Hàm formatProductForFrontend đã bao gồm tính final_price
+    return formatProductForFrontend(product);
   },
 
   // Tạo sản phẩm - chỉ owner của store
@@ -69,7 +86,9 @@ export const ProductService = {
       }
     }
 
-    return ProductModel.create(payload);
+    // SỬA: Thêm hàm format cho kết quả trả về
+    const newProduct = await ProductModel.create(payload);
+    return formatProductForFrontend(newProduct);
   },
 
   // Cập nhật sản phẩm - chỉ owner của store
@@ -100,7 +119,9 @@ export const ProductService = {
       }
     }
 
-    return ProductModel.updateById(id, patch);
+    // SỬA: Thêm hàm format cho kết quả trả về
+    const updatedProduct = await ProductModel.updateById(id, patch);
+    return formatProductForFrontend(updatedProduct);
   },
 
   // Xóa sản phẩm - chỉ owner của store
@@ -119,15 +140,26 @@ export const ProductService = {
     }
 
     // Xóa tất cả cart items liên quan đến sản phẩm này trước
-    const cartItems = await CartItemModel.findMany({
-      where: { product_id: id },
-    });
+    // SỬA: Truy vấn đúng cách để lấy cart_items theo product_id
+    const { databasePool } = await import("../config/database.js"); // Cần import pool
+    const cartItemsResult = await databasePool.query(
+      "SELECT id FROM cart_items WHERE product_id = $1",
+      [id]
+    );
+    const cartItems = cartItemsResult.rows;
 
     if (cartItems.length > 0) {
       // Xóa từng cart item
       for (const cartItem of cartItems) {
         await CartItemModel.deleteById(cartItem.id);
       }
+      console.log(
+        `Đã xóa ${cartItems.length} cart items liên quan đến sản phẩm ${id}`
+      );
+    } else {
+      console.log(
+        `Không tìm thấy cart items nào liên quan đến sản phẩm ${id} để xóa.`
+      );
     }
 
     // Sau đó mới xóa sản phẩm

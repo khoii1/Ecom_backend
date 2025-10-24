@@ -1,4 +1,6 @@
 import { BaseModel } from "./base.model.js";
+import { databasePool } from "../config/database.js";
+
 const tableName = "stores";
 export const StoreModel = {
   findMany: (args = {}) => BaseModel.findMany({ tableName, ...args }),
@@ -13,7 +15,11 @@ export const StoreModel = {
   updateById: (id, patch) => BaseModel.updateById({ tableName, id, patch }),
   deleteById: (id) => BaseModel.deleteById({ tableName, id }),
 
-  // Helper methods
-  findByOwnerId: (ownerId) =>
-    BaseModel.findMany({ tableName, where: { owner_id: ownerId } }),
+  findByOwnerId: async (ownerId) => {
+    const r = await databasePool.query(
+      `SELECT * FROM ${tableName} WHERE owner_id = $1 ORDER BY created_at DESC`,
+      [ownerId]
+    );
+    return r.rows;
+  },
 };

@@ -9,12 +9,16 @@ const router = Router();
 
 // Validation middleware
 const orderItemIdValidation = [
-  param("orderItemId").isUUID().withMessage("ID mục đơn hàng không hợp lệ"),
+  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
+  param("orderItemId")
+    .isInt({ min: 1 })
+    .withMessage("ID mục đơn hàng không hợp lệ"),
 ];
 
 const createOrderItemValidation = [
-  body("order_id").isUUID().withMessage("ID đơn hàng không hợp lệ"),
-  body("product_id").isUUID().withMessage("ID sản phẩm không hợp lệ"),
+  body("order_id").isInt({ min: 1 }).withMessage("ID đơn hàng không hợp lệ"),
+
+  body("product_id").isInt({ min: 1 }).withMessage("ID sản phẩm không hợp lệ"),
   body("unit_price")
     .isNumeric()
     .isFloat({ min: 0 })
@@ -22,7 +26,8 @@ const createOrderItemValidation = [
   body("qty").isInt({ min: 1 }).withMessage("Số lượng phải là số nguyên dương"),
   body("variant_id")
     .optional()
-    .isUUID()
+    // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
+    .isInt({ min: 1 })
     .withMessage("ID biến thể không hợp lệ"),
 ];
 

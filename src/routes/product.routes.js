@@ -11,18 +11,19 @@ const router = Router();
 
 // Validation middleware
 const productIdValidation = [
-  param("productId").isUUID().withMessage("ID sản phẩm không hợp lệ"),
+  param("productId").isInt({ min: 1 }).withMessage("ID sản phẩm không hợp lệ"),
 ];
 
 const createProductValidation = [
-  body("store_id").isUUID().withMessage("ID cửa hàng không hợp lệ"),
+  body("store_id").isInt({ min: 1 }).withMessage("ID cửa hàng không hợp lệ"),
   body("title")
     .trim()
     .isLength({ min: 2, max: 200 })
     .withMessage("Tiêu đề sản phẩm phải từ 2-200 ký tự"),
+
   body("category_id")
     .optional()
-    .isUUID()
+    .isInt({ min: 1 })
     .withMessage("ID danh mục không hợp lệ"),
   body("price")
     .isNumeric()
@@ -63,9 +64,10 @@ const updateProductValidation = [
     .trim()
     .isLength({ min: 2, max: 200 })
     .withMessage("Tiêu đề sản phẩm phải từ 2-200 ký tự"),
+  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
   body("category_id")
     .optional()
-    .isUUID()
+    .isInt({ min: 1 })
     .withMessage("ID danh mục không hợp lệ"),
   body("price")
     .optional()

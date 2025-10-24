@@ -9,7 +9,7 @@ const router = Router();
 
 // Validation middleware
 const categoryIdValidation = [
-  param("categoryId").isUUID().withMessage("ID danh mục không hợp lệ"),
+  param("categoryId").isInt({ min: 1 }).withMessage("ID danh mục không hợp lệ"),
 ];
 
 const createCategoryValidation = [
@@ -17,9 +17,10 @@ const createCategoryValidation = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage("Tên danh mục phải từ 2-100 ký tự"),
+
   body("parent_id")
     .optional()
-    .isUUID()
+    .isInt({ min: 1 })
     .withMessage("ID danh mục cha không hợp lệ"),
 ];
 
@@ -30,9 +31,10 @@ const updateCategoryValidation = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage("Tên danh mục phải từ 2-100 ký tự"),
+
   body("parent_id")
     .optional()
-    .isUUID()
+    .isInt({ min: 1 })
     .withMessage("ID danh mục cha không hợp lệ"),
 ];
 

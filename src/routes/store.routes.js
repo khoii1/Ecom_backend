@@ -10,7 +10,7 @@ const router = Router();
 
 // Validation middleware
 const storeIdValidation = [
-  param("storeId").isUUID().withMessage("ID cửa hàng không hợp lệ"),
+  param("storeId").isInt({ min: 1 }).withMessage("ID cửa hàng không hợp lệ"),
   validate,
 ];
 
@@ -23,7 +23,8 @@ const createStoreValidation = [
 ];
 
 const updateStoreValidation = [
-  param("storeId").isUUID().withMessage("ID cửa hàng không hợp lệ"),
+  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
+  param("storeId").isInt({ min: 1 }).withMessage("ID cửa hàng không hợp lệ"),
   body("name")
     .optional()
     .trim()
