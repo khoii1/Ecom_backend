@@ -45,6 +45,8 @@ const UserController = {
     if (!user)
       return res.status(404).json({ message: "Người dùng không tồn tại" });
     const { password_hash, ...userProfile } = user;
+    // Convert ID to string for frontend compatibility
+    userProfile.id = userProfile.id.toString();
     res.json(userProfile);
   }),
 

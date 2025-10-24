@@ -12,7 +12,7 @@ import { sendCodeEmail } from "../utils/email.js";
 
 const signAccess = (u) =>
   jwt.sign({ role: u.role }, process.env.JWT_ACCESS_SECRET, {
-    subject: u.id,
+    subject: u.id.toString(), // Convert integer ID to string for JWT
     expiresIn: process.env.JWT_ACCESS_EXPIRES || "24h", // Tăng thời gian sống lên 24h
   });
 
@@ -102,7 +102,7 @@ export const AuthController = {
     res.json({
       access_token: access,
       user: {
-        id: user.id,
+        id: user.id.toString(),
         email: user.email,
         full_name: user.full_name,
         role: user.role,

@@ -1,8 +1,6 @@
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 -- 1) USERS
 CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id SERIAL PRIMARY KEY,
   full_name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
@@ -14,8 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- 2) STORES
 CREATE TABLE IF NOT EXISTS stores (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  owner_id UUID NOT NULL REFERENCES users(id),
+  id SERIAL PRIMARY KEY,
+  owner_id INTEGER NOT NULL REFERENCES users(id),
   name TEXT NOT NULL,
   status TEXT DEFAULT 'active',
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -24,9 +22,9 @@ CREATE TABLE IF NOT EXISTS stores (
 
 -- 3) CATEGORIES (Global - Admin only)
 CREATE TABLE IF NOT EXISTS categories (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
-  parent_id UUID REFERENCES categories(id),
+  parent_id INTEGER REFERENCES categories(id),
   image_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -38,11 +36,11 @@ CREATE INDEX IF NOT EXISTS idx_categories_parent_id ON categories(parent_id);
 
 -- 4) PRODUCTS
 CREATE TABLE IF NOT EXISTS products (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  store_id UUID NOT NULL REFERENCES stores(id),
+  id SERIAL PRIMARY KEY,
+  store_id INTEGER NOT NULL REFERENCES stores(id),
   title TEXT NOT NULL,
   description TEXT,
-  category_id UUID REFERENCES categories(id),
+  category_id INTEGER REFERENCES categories(id),
   price NUMERIC(12,2) NOT NULL,
   discount_percentage NUMERIC(5,2) CHECK (discount_percentage IS NULL OR (discount_percentage >= 0 AND discount_percentage <= 100)),
   rating NUMERIC(2,1) CHECK (rating IS NULL OR (rating >= 0 AND rating <= 5)),
@@ -54,26 +52,26 @@ CREATE TABLE IF NOT EXISTS products (
 
 -- 5) CARTS
 CREATE TABLE IF NOT EXISTS carts (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID UNIQUE NOT NULL REFERENCES users(id),
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER UNIQUE NOT NULL REFERENCES users(id),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 6) CART ITEMS
 CREATE TABLE IF NOT EXISTS cart_items (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  cart_id UUID NOT NULL REFERENCES carts(id) ON DELETE CASCADE,
-  product_id UUID NOT NULL REFERENCES products(id),
-  variant_id UUID,
+  id SERIAL PRIMARY KEY,
+  cart_id INTEGER NOT NULL REFERENCES carts(id) ON DELETE CASCADE,
+  product_id INTEGER NOT NULL REFERENCES products(id),
+  variant_id INTEGER,
   qty INTEGER NOT NULL CHECK (qty > 0)
 );
 
 -- 7) ORDERS
 CREATE TABLE IF NOT EXISTS orders (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id SERIAL PRIMARY KEY,
   code TEXT UNIQUE NOT NULL,
-  buyer_id UUID NOT NULL REFERENCES users(id),
-  store_id UUID NOT NULL REFERENCES stores(id),
+  buyer_id INTEGER NOT NULL REFERENCES users(id),
+  store_id INTEGER NOT NULL REFERENCES stores(id),
   subtotal NUMERIC(12,2) NOT NULL,
   total NUMERIC(12,2) NOT NULL,
   status TEXT DEFAULT 'pending',
@@ -83,18 +81,18 @@ CREATE TABLE IF NOT EXISTS orders (
 
 -- 8) ORDER ITEMS
 CREATE TABLE IF NOT EXISTS order_items (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-  product_id UUID NOT NULL REFERENCES products(id),
-  variant_id UUID,
+  id SERIAL PRIMARY KEY,
+  order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  product_id INTEGER NOT NULL REFERENCES products(id),
+  variant_id INTEGER,
   unit_price NUMERIC(12,2) NOT NULL,
   qty INTEGER NOT NULL CHECK (qty > 0)
 );
 
 -- 9) PASSWORD RESET / EMAIL VERIFY TOKENS
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES users(id),
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
   token_hash TEXT NOT NULL,
   purpose TEXT NOT NULL, -- 'verify_email' | 'reset_password'
   expires_at TIMESTAMPTZ NOT NULL,

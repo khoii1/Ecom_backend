@@ -43,22 +43,22 @@
     },
     {
       "key": "user_id",
-      "value": "2f1dab07-2323-455c-b485-e7fc0920dfe6",
+      "value": "1",
       "type": "string"
     },
     {
       "key": "store_id",
-      "value": "744b63a3-0219-4a4a-a31f-07f253b84795",
+      "value": "1",
       "type": "string"
     },
     {
       "key": "product_id",
-      "value": "880e8400-e29b-41d4-a716-446655440001",
+      "value": "1",
       "type": "string"
     },
     {
       "key": "category_id",
-      "value": "eeb7cbae-9654-4233-9c03-1c958d8a6739",
+      "value": "1",
       "type": "string"
     },
     {
@@ -347,15 +347,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/users/:userId",
+              "raw": "{{base_url}}/users/{{user_id}}",
               "host": ["{{base_url}}"],
-              "path": ["users", ":userId"],
-              "variable": [
-                {
-                  "key": "userId",
-                  "value": "user-uuid-here"
-                }
-              ]
+              "path": ["users", "{{user_id}}"]
             }
           },
           "response": []
@@ -431,15 +425,9 @@
               "raw": "{\n  \"full_name\": \"Trần Thị Mai - Updated\",\n  \"role\": \"ADMIN\",\n  \"status\": \"active\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/users/:userId",
+              "raw": "{{base_url}}/users/{{user_id}}",
               "host": ["{{base_url}}"],
-              "path": ["users", ":userId"],
-              "variable": [
-                {
-                  "key": "userId",
-                  "value": "user-uuid-here"
-                }
-              ]
+              "path": ["users", "{{user_id}}"]
             }
           },
           "response": []
@@ -460,15 +448,9 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/users/:userId",
+              "raw": "{{base_url}}/users/{{user_id}}",
               "host": ["{{base_url}}"],
-              "path": ["users", ":userId"],
-              "variable": [
-                {
-                  "key": "userId",
-                  "value": "user-uuid-here"
-                }
-              ]
+              "path": ["users", "{{user_id}}"]
             }
           },
           "response": []
@@ -876,7 +858,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"store_id\": \"{{store_id}}\",\n  \"title\": \"iPhone 15 Pro Max 256GB - Natural Titanium\",\n  \"category_id\": \"{{category_id}}\",\n  \"price\": 29990000,\n  \"discounted_price\": 27990000,\n  \"rating\": 4.8,\n  \"image_url\": \"https://cdn.tgdd.vn/Products/Images/42/305658/iphone-15-pro-max-natural-titanium-1-1.jpg\",\n  \"status\": \"active\"\n}"
+              "raw": "{\n  \"store_id\": {{store_id}},\n  \"title\": \"iPhone 15 Pro Max 256GB - Natural Titanium\",\n  \"description\": \"Flagship iPhone với chip A17 Pro và camera 48MP tiên tiến\",\n  \"category_id\": {{category_id}},\n  \"price\": 29990000,\n  \"discount_percentage\": 10,\n  \"rating\": 4.8,\n  \"image_url\": \"https://cdn.tgdd.vn/Products/Images/42/305658/iphone-15-pro-max-natural-titanium-1-1.jpg\",\n  \"status\": \"active\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/products",
@@ -923,7 +905,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"store_id\": \"{{store_id}}\",\n  \"title\": \"Samsung Galaxy S24 Ultra 512GB - Titanium Black\",\n  \"category_id\": \"{{category_id}}\",\n  \"price\": 31990000,\n  \"discounted_price\": 29990000,\n  \"rating\": 4.6,\n  \"image_url\": \"{{uploaded_image_url}}\",\n  \"status\": \"active\"\n}"
+              "raw": "{\n  \"store_id\": {{store_id}},\n  \"title\": \"Samsung Galaxy S24 Ultra 512GB - Titanium Black\",\n  \"description\": \"Flagship Samsung với S Pen tích hợp và camera 200MP\",\n  \"category_id\": {{category_id}},\n  \"price\": 31990000,\n  \"discount_percentage\": 15,\n  \"rating\": 4.6,\n  \"image_url\": \"{{uploaded_image_url}}\",\n  \"status\": \"active\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/products",
@@ -955,7 +937,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"iPhone 15 Pro Max 512GB - Natural Titanium\",\n  \"price\": 34990000\n}"
+              "raw": "{\n  \"title\": \"iPhone 15 Pro Max 512GB - Natural Titanium\",\n  \"price\": 34990000,\n  \"discount_percentage\": 12\n}"
             },
             "url": {
               "raw": "{{base_url}}/products/{{product_id}}",
@@ -1089,7 +1071,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"product_id\": \"{{product_id}}\",\n  \"qty\": 1\n}"
+              "raw": "{\n  \"product_id\": {{product_id}},\n  \"qty\": 1\n}"
             },
             "url": {
               "raw": "{{base_url}}/cart/items",

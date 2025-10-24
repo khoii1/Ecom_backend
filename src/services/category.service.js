@@ -1,14 +1,33 @@
 import { CategoryModel } from "../models/category.model.js";
 
+// Helper function to convert category IDs to string for frontend compatibility
+const formatCategoryForFrontend = (category) => {
+  if (!category) return category;
+  return {
+    ...category,
+    id: category.id.toString(),
+    parent_id: category.parent_id
+      ? category.parent_id.toString()
+      : category.parent_id,
+  };
+};
+
+const formatCategoriesForFrontend = (categories) => {
+  if (!Array.isArray(categories)) return categories;
+  return categories.map(formatCategoryForFrontend);
+};
+
 export const CategoryService = {
   // Lấy tất cả categories - Public cho tất cả users
-  list: () => {
-    return CategoryModel.findMany({});
+  list: async () => {
+    const categories = await CategoryModel.findMany({});
+    return formatCategoriesForFrontend(categories);
   },
 
   // Lấy categories với thống kê số sản phẩm
-  listWithStats: () => {
-    return CategoryModel.findWithChildren();
+  listWithStats: async () => {
+    const categories = await CategoryModel.findWithChildren();
+    return formatCategoriesForFrontend(categories);
   },
 
   // Xem chi tiết category - Public
@@ -17,21 +36,22 @@ export const CategoryService = {
     if (!category) {
       throw new Error("Không tìm thấy danh mục");
     }
-    return category;
+    return formatCategoryForFrontend(category);
   },
 
   // Tạo category - CHỈ ADMIN
-  create: (currentUser, payload) => {
+  create: async (currentUser, payload) => {
     // Kiểm tra quyền admin
     if (currentUser.role !== "ADMIN") {
       throw new Error("Chỉ Admin mới có thể tạo danh mục");
     }
 
-    return CategoryModel.create({
+    const category = await CategoryModel.create({
       name: payload.name,
       parent_id: payload.parent_id || null,
       image_url: payload.image_url || null,
     });
+    return formatCategoryForFrontend(category);
   },
 
   // Sửa category - CHỈ ADMIN
@@ -47,11 +67,12 @@ export const CategoryService = {
       throw new Error("Không tìm thấy danh mục");
     }
 
-    return CategoryModel.updateById(id, {
+    const updatedCategory = await CategoryModel.updateById(id, {
       name: patch.name,
       parent_id: patch.parent_id,
       image_url: patch.image_url,
     });
+    return formatCategoryForFrontend(updatedCategory);
   },
 
   // Xóa category - CHỈ ADMIN
@@ -74,7 +95,8 @@ export const CategoryService = {
   // Lấy categories theo hierarchy tree
   getTree: async () => {
     const categories = await CategoryModel.findMany({});
-    return buildCategoryTree(categories);
+    const formattedCategories = formatCategoriesForFrontend(categories);
+    return buildCategoryTree(formattedCategories);
   },
 };
 
