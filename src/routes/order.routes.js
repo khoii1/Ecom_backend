@@ -8,15 +8,12 @@ import { OrderController } from "../controllers/order.controller.js";
 
 const router = Router();
 
-// Validation middleware
+// Validation middleware (Đã sửa isInt - Chính xác ✅)
 const orderIdValidation = [
-  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
   param("orderId").isInt({ min: 1 }).withMessage("ID đơn hàng không hợp lệ"),
   validate,
 ];
-
 const storeIdValidation = [
-  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
   param("storeId").isInt({ min: 1 }).withMessage("ID cửa hàng không hợp lệ"),
   validate,
 ];
@@ -24,7 +21,7 @@ const storeIdValidation = [
 // Routes - all require authentication
 router.use(authentication());
 
-// Create order from cart
+// Create order from cart (POST /orders/) - Sẽ dùng endpoint này ✅
 router.post("/", OrderController.createFromCart);
 
 // Get my orders (for customers)
@@ -41,4 +38,35 @@ router.get(
   OrderController.listByStore
 );
 
+// --- THÊM MỚI: Endpoint kiểm tra trạng thái Order ---
+// Endpoint này sẽ được Frontend gọi sau khi Stripe Payment Sheet đóng lại
+// để xác nhận trạng thái cuối cùng (dựa vào webhook đã xử lý)
+router.get(
+  "/:orderId/status", // Đường dẫn ví dụ: GET /orders/123/status
+  orderIdValidation, // Validate orderId
+  handle(async (req, res) => {
+    // Dùng handle từ base.controller
+    const orderId = parseInt(req.params.orderId, 10);
+    const currentUser = req.currentUser;
+
+    const order = await OrderService.detail(orderId); // Dùng service để lấy chi tiết
+
+    if (!order) {
+      return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+    }
+
+    // Kiểm tra quyền xem: Chỉ chủ đơn hàng hoặc Admin
+    if (order.buyer_id !== currentUser.id && currentUser.role !== ROLES.ADMIN) {
+      return res
+        .status(403)
+        .json({ message: "Không có quyền xem đơn hàng này" });
+    }
+
+    res.json({ status: order.status });
+  })
+);
+
 export default router;
+
+import { handle } from "../controllers/base.controller.js";
+import { OrderService } from "../services/order.service.js";

@@ -7,6 +7,7 @@ dotenv.config();
 import { corsMiddleware } from "./middleware/cors.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 
+// --- SỬA: Import thêm các routes ---
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import storeRoutes from "./routes/store.routes.js";
@@ -17,6 +18,8 @@ import orderRoutes from "./routes/order.routes.js";
 import cartItemRoutes from "./routes/cart_item.routes.js";
 import orderItemRoutes from "./routes/order_item.routes.js";
 import passwordResetTokenRoutes from "./routes/password_reset_token.routes.js";
+import stripeRoutes from "./routes/stripe.routes.js"; // <<< THÊM IMPORT STRIPE ROUTES
+// --- KẾT THÚC SỬA ---
 
 const app = express();
 
@@ -26,8 +29,7 @@ const __dirname = path.dirname(__filename);
 
 // Global middleware
 app.use(corsMiddleware);
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+// Middleware express.json() và urlencoded() sẽ được đặt SAU cấu hình webhook
 
 // Serve static files for admin panel
 app.use("/admin", express.static(path.join(__dirname, "../public/admin")));
@@ -41,6 +43,37 @@ app.get("/", (req, res) =>
   })
 );
 
+// --- SỬA: Cấu hình Webhook Stripe (Đặt TRƯỚC express.json) ---
+// Tìm router xử lý webhook từ stripeRoutes một cách an toàn
+const webhookRouteLayer = stripeRoutes.stack.find(
+  (layer) =>
+    layer.route && layer.route.path === "/webhook" && layer.route.methods.post
+);
+
+if (webhookRouteLayer && webhookRouteLayer.handle) {
+  // Chỉ áp dụng express.raw cho đường dẫn webhook cụ thể này
+  app.post(
+    "/payment/stripe/webhook", // Đường dẫn đầy đủ mà Stripe sẽ gọi
+    express.raw({ type: "application/json" }), // Middleware đọc raw body
+    (req, res, next) => {
+      // Gọi trực tiếp handler đã tìm thấy từ stripeRoutes
+      webhookRouteLayer.handle(req, res, next);
+    }
+  );
+  console.log(
+    "Stripe webhook endpoint configured with raw body parser at /payment/stripe/webhook"
+  );
+} else {
+  console.error(
+    "FATAL ERROR: Could not find Stripe webhook handler in stripe.routes.js! Webhook processing will fail."
+  );
+  // Cân nhắc dừng server nếu webhook là thiết yếu: process.exit(1);
+}
+
+// Middleware parsing JSON/URL-encoded cho các request khác (Đặt SAU webhook)
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
 // API routes
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
@@ -52,8 +85,10 @@ app.use("/orders", orderRoutes);
 app.use("/cart-items", cartItemRoutes);
 app.use("/order-items", orderItemRoutes);
 app.use("/password-reset-tokens", passwordResetTokenRoutes);
+app.use("/payment/stripe", stripeRoutes); 
 
-// Error handling middleware (must be last)
+
+
 app.use(notFoundHandler);
 app.use(errorHandler);
 

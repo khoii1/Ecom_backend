@@ -1,5 +1,6 @@
 import { databasePool } from "../config/database.js";
 
+// --- Danh sách các bảng CÓ cột updated_at ---
 const tablesWithUpdatedAt = new Set([
   "users",
   "stores",
@@ -8,20 +9,36 @@ const tablesWithUpdatedAt = new Set([
   "carts",
   "orders",
 ]);
+// --- KẾT THÚC ---
 
 export const BaseModel = {
   async findMany({
     tableName,
-    orderClause = "ORDER BY created_at DESC",
+    // SỬA: Thay đổi sắp xếp mặc định từ created_at sang id
+    orderClause = "ORDER BY id ASC", // <<< SỬA Ở ĐÂY
+    // --- KẾT THÚC SỬA ---
     limit = 100,
   }) {
-    // ... (findMany giữ nguyên) ...
-    const sql = `SELECT * FROM ${tableName} ${orderClause} LIMIT $1`;
-    const r = await databasePool.query(sql, [limit]);
-    return r.rows;
+    // Kiểm tra orderClause hợp lệ (đơn giản) để tránh SQL injection cơ bản
+    // Trong thực tế có thể cần kiểm tra kỹ hơn
+    const safeOrderClause = orderClause.toUpperCase().startsWith("ORDER BY")
+      ? orderClause
+      : "ORDER BY id ASC";
+
+    const sql = `SELECT * FROM ${tableName} ${safeOrderClause} LIMIT $1`;
+    try {
+      const r = await databasePool.query(sql, [limit]);
+      return r.rows;
+    } catch (dbError) {
+      console.error(
+        `Database error during findMany for ${tableName}:`,
+        dbError
+      );
+      // Ném lại lỗi để controller xử lý
+      throw dbError;
+    }
   },
   async findById({ tableName, id }) {
-    // ... (findById giữ nguyên với parseInt) ...
     const numericId = parseInt(id, 10);
     if (isNaN(numericId)) {
       console.error(
@@ -36,14 +53,18 @@ export const BaseModel = {
     return r.rows[0] || null;
   },
   async insert({ tableName, columns, values }) {
-    // ... (insert giữ nguyên) ...
     const cols = columns.join(", ");
     const ph = values.map((_, i) => `$${i + 1}`).join(", ");
-    const r = await databasePool.query(
-      `INSERT INTO ${tableName}(${cols}) VALUES(${ph}) RETURNING *`,
-      values
-    );
-    return r.rows[0];
+    try {
+      const r = await databasePool.query(
+        `INSERT INTO ${tableName}(${cols}) VALUES(${ph}) RETURNING *`,
+        values
+      );
+      return r.rows[0];
+    } catch (dbError) {
+      console.error(`Database error during insert for ${tableName}:`, dbError);
+      throw dbError;
+    }
   },
   async updateById({ tableName, id, patch }) {
     const keys = Object.keys(patch);
@@ -57,21 +78,19 @@ export const BaseModel = {
       throw new Error(`ID không hợp lệ cho bảng ${tableName}`);
     }
 
-    // SỬA: Chỉ thêm updated_at nếu bảng có cột đó
     const setClause = keys.map((k, i) => `${k}=$${i + 1}`).join(", ");
     const finalSetClause = tablesWithUpdatedAt.has(tableName)
-      ? `${setClause}, updated_at=NOW()` // Thêm updated_at nếu bảng có
-      : setClause; // Không thêm nếu bảng không có
+      ? `${setClause}, updated_at=NOW()`
+      : setClause;
 
     try {
       const sql = `UPDATE ${tableName} SET ${finalSetClause} WHERE id=$${
         keys.length + 1
       } RETURNING *`;
-      // --- KẾT THÚC SỬA ---
-      const r = await databasePool.query(
-        sql, // <<< Dùng câu lệnh SQL đã được cập nhật
-        [...keys.map((k) => patch[k]), numericId]
-      );
+      const r = await databasePool.query(sql, [
+        ...keys.map((k) => patch[k]),
+        numericId,
+      ]);
       return r.rows[0] || null;
     } catch (dbError) {
       console.error(
@@ -82,7 +101,6 @@ export const BaseModel = {
     }
   },
   async deleteById({ tableName, id }) {
-    // ... (deleteById giữ nguyên với parseInt) ...
     const numericId = parseInt(id, 10);
     if (isNaN(numericId)) {
       console.error(
@@ -104,7 +122,6 @@ export const BaseModel = {
     }
   },
   async findOne({ tableName, ...conditions }) {
-    // ... (findOne giữ nguyên với parseInt cho ID conditions) ...
     const keys = Object.keys(conditions);
     if (!keys.length) return null;
 
@@ -121,7 +138,7 @@ export const BaseModel = {
           return numVal;
         } else {
           console.warn(
-            `Invalid numeric value for condition ${key}=${val} in findOne for ${tableName}. Query might fail or return no results.`
+            `Invalid numeric value for condition ${key}=${val} in findOne for ${tableName}.`
           );
           return val;
         }
