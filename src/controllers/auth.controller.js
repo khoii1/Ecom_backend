@@ -93,11 +93,14 @@ export const AuthController = {
     const user = await UserModel.findByEmail(email);
     if (!user)
       return res.status(401).json({ message: "Sai thông tin đăng nhập" });
-    if (user.status !== "active")
-      return res.status(403).json({ message: "Tài khoản chưa kích hoạt" });
+
     const ok = await comparePassword(password, user.password_hash);
     if (!ok)
       return res.status(401).json({ message: "Sai thông tin đăng nhập" });
+
+    if (user.status !== "active")
+      return res.status(403).json({ message: "Tài khoản chưa kích hoạt" });
+
     const access = signAccess(user);
     res.json({
       access_token: access,
@@ -155,12 +158,10 @@ export const AuthController = {
       return res.status(400).json({ message: "Mã đã hết hạn" });
     if (sha256(code) !== token.token_hash)
       return res.status(400).json({ message: "Mã không đúng" });
+
     await PasswordResetTokenModel.markUsed(token.id);
     const password_hash = await hashPassword(newPassword);
     await UserModel.updateById(user.id, { password_hash });
-    await (
-      await import("../models/auth_token.model.js")
-    ).AuthTokenModel.deleteByUser(user.id);
     res.json({ message: "Đổi mật khẩu thành công" });
   },
 };
