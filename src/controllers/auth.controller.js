@@ -114,9 +114,34 @@ export const AuthController = {
   },
 
   logout: async (req, res) => {
-    // Với JWT, logout chỉ cần client xóa token
-    // Server không cần làm gì thêm
     res.json({ message: "Đã đăng xuất thành công" });
+  },
+
+  verifyResetCode: async (req, res) => {
+    const { email, code } = req.body;
+
+    // 1️ Kiểm tra user tồn tại
+    const user = await UserModel.findByEmail(email);
+    if (!user) return res.status(404).json({ message: "Email không tồn tại" });
+
+    // 2️ Tìm token gần nhất cho reset_password
+    const token = await PasswordResetTokenModel.findLatestByPurpose(
+      user.id,
+      "reset_password"
+    );
+    if (!token)
+      return res.status(400).json({ message: "Không có mã xác thực hợp lệ" });
+
+    // 3️⃣ Kiểm tra token đã dùng, hết hạn hoặc sai mã
+    if (token.used)
+      return res.status(400).json({ message: "Mã đã được sử dụng" });
+    if (new Date(token.expires_at) < new Date())
+      return res.status(400).json({ message: "Mã đã hết hạn" });
+    if (sha256(code) !== token.token_hash)
+      return res.status(400).json({ message: "Mã không đúng" });
+
+    // 4️⃣ Nếu hợp lệ
+    res.json({ message: "Mã xác thực hợp lệ" });
   },
 
   forgotPassword: async (req, res) => {

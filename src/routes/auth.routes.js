@@ -63,6 +63,12 @@ router.post(
   AuthController.forgotPassword
 );
 router.post(
+  "/verify-reset-code",
+  verifyEmailValidation, 
+  AuthController.verifyResetCode
+);
+
+router.post(
   "/reset-password",
   resetPasswordValidation,
   AuthController.resetPassword
