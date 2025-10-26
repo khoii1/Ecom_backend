@@ -49,11 +49,19 @@ router.get(
     const orderId = parseInt(req.params.orderId, 10);
     const currentUser = req.currentUser;
 
-    const order = await OrderService.detail(orderId); // Dùng service để lấy chi tiết
+    const order = await OrderModel.findById(orderId);
 
     if (!order) {
       return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
     }
+
+    console.log(
+      `Checking permission: Order Buyer ID = ${
+        order.buyer_id
+      } (Type: ${typeof order.buyer_id}), Current User ID = ${
+        currentUser.id
+      } (Type: ${typeof currentUser.id}), Role = ${currentUser.role}`
+    );
 
     // Kiểm tra quyền xem: Chỉ chủ đơn hàng hoặc Admin
     if (order.buyer_id !== currentUser.id && currentUser.role !== ROLES.ADMIN) {
@@ -69,4 +77,4 @@ router.get(
 export default router;
 
 import { handle } from "../controllers/base.controller.js";
-import { OrderService } from "../services/order.service.js";
+import { OrderModel } from "../models/order.model.js";
