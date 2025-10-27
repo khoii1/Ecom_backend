@@ -5,6 +5,8 @@ import { authentication } from "../middleware/authentication.js";
 import { authorizeByRoles } from "../middleware/authorization.js";
 import { validate } from "../middleware/validation.js";
 import { ROLES } from "../constants/roles.js";
+import { handle } from "../controllers/base.controller.js";
+import { databasePool } from "../config/database.js";
 
 const router = Router();
 
@@ -46,6 +48,31 @@ router.get(
   StoreController.myStores
 );
 router.get("/:storeId", storeIdValidation, StoreController.detail);
+router.get(
+  "/admin/list",
+  authentication(),
+  authorizeByRoles([ROLES.ADMIN]),
+  handle(async (req, res) => {
+    const query = `
+      SELECT 
+        s.*, 
+        u.full_name as owner_name, 
+        u.email as owner_email 
+      FROM stores s
+      JOIN users u ON s.owner_id = u.id
+      ORDER BY s.created_at DESC
+    `;
+    const r = await databasePool.query(query);
+
+    // Format lại ID cho nhất quán
+    const stores = r.rows.map((row) => ({
+      ...row,
+      id: row.id.toString(),
+      owner_id: row.owner_id.toString(),
+    }));
+    res.json(stores);
+  })
+);
 router.post(
   "/",
   authentication(),
