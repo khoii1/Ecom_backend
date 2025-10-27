@@ -8,7 +8,7 @@ import { OrderController } from "../controllers/order.controller.js";
 
 const router = Router();
 
-// Validation middleware (Đã sửa isInt - Chính xác ✅)
+// Validation middleware (Đã sửa isInt - Chính xác)
 const orderIdValidation = [
   param("orderId").isInt({ min: 1 }).withMessage("ID đơn hàng không hợp lệ"),
   validate,
@@ -21,7 +21,7 @@ const storeIdValidation = [
 // Routes - all require authentication
 router.use(authentication());
 
-// Create order from cart (POST /orders/) - Sẽ dùng endpoint này ✅
+// Create order from cart (POST /orders/) - Sẽ dùng endpoint này
 router.post("/", OrderController.createFromCart);
 
 // Get my orders (for customers)
@@ -38,12 +38,9 @@ router.get(
   OrderController.listByStore
 );
 
-// --- THÊM MỚI: Endpoint kiểm tra trạng thái Order ---
-// Endpoint này sẽ được Frontend gọi sau khi Stripe Payment Sheet đóng lại
-// để xác nhận trạng thái cuối cùng (dựa vào webhook đã xử lý)
 router.get(
-  "/:orderId/status", // Đường dẫn ví dụ: GET /orders/123/status
-  orderIdValidation, // Validate orderId
+  "/:orderId/status",
+  orderIdValidation,
   handle(async (req, res) => {
     // Dùng handle từ base.controller
     const orderId = parseInt(req.params.orderId, 10);
