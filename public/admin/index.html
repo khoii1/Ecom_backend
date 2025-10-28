@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard - Ecommerce Admin</title>
+    <link rel="stylesheet" href="css/admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="header">
+      <h1><i class="fas fa-tachometer-alt"></i> Ecommerce Admin</h1>
+      <div class="user-info">
+        <span id="adminName"><i class="fas fa-user"></i> Admin</span>
+        <button class="logout-btn" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </button>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="sidebar">
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="index.html" class="nav-link active">
+              <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="users.html" class="nav-link">
+              <i class="fas fa-users"></i> Người dùng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="categories.html" class="nav-link">
+              <i class="fas fa-tags"></i> Danh mục
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="products.html" class="nav-link">
+              <i class="fas fa-box"></i> Sản phẩm
+            </a>
+          </li>
+          </li>
+        </ul>
+      </div>
+
+      <div class="main-content">
+        <div class="content-header">
+          <h2>Bảng điều khiển</h2>
+          <div class="breadcrumb">
+            <i class="fas fa-home"></i> Trang chủ / Dashboard
+          </div>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <div class="stats-grid">
+          <div class="stat-card stat-users">
+            <div class="stat-number" id="totalUsers">-</div>
+            <div class="stat-label">
+              <i class="fas fa-users"></i> Tổng người dùng
+            </div>
+          </div>
+
+          <div class="stat-card stat-products">
+            <div class="stat-number" id="totalProducts">-</div>
+            <div class="stat-label">
+              <i class="fas fa-box"></i> Tổng sản phẩm
+            </div>
+          </div>
+
+          <div class="stat-card stat-categories">
+            <div class="stat-number" id="totalCategories">-</div>
+            <div class="stat-label">
+              <i class="fas fa-tags"></i> Tổng danh mục
+            </div>
+          </div>
+
+          <div class=" stat-orders">
+
+            <div class="stat-card stat-stores"> <div class="stat-number" id="totalStores">-</div> <div class="stat-label">
+            <i class="fas fa-store"></i> Tổng cửa hàng </div>
+        </div>
+          </div>
+        </div>
+
+        <div class="table-container">
+        <div class="table-header">
+          <div class="table-title">
+            <i class="fas fa-store"></i> Quản lý Cửa hàng
+          </div>
+        </div>
+
+        <div class="loading" id="storesLoading">
+          <div class="spinner"></div>
+          <p>Đang tải dữ liệu...</p>
+        </div>
+
+        <table class="data-table" id="storesTable" style="display: none">
+          <thead>
+            <tr>
+              <th>Tên cửa hàng</th>
+              <th>Chủ sở hữu</th>
+              <th>Email chủ sở hữu</th>
+              <th>Trạng thái</th>
+              <th>Ngày tạo</th>
+            </tr>
+          </thead>
+          <tbody id="storesTableBody"></tbody>
+        </table>
+      </div>
+</table>
+
+<table class="data-table" id="ordersTable" style="display: none">
+  <thead>
+    <tr>
+      <th>Mã ĐH</th> <th>Khách hàng</th> <th>Tổng tiền</th> <th>Trạng thái</th> <th>Ngày đặt</th> </tr>
+  </thead>
+  <tbody id="ordersTableBody"></tbody>
+</table>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+  </body>
+</html>

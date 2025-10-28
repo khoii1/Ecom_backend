@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản lý người dùng - Ecommerce Admin</title>
+    <link rel="stylesheet" href="css/admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="header">
+      <h1><i class="fas fa-users"></i> Quản lý người dùng</h1>
+      <div class="user-info">
+        <span id="adminName"><i class="fas fa-user"></i> Admin</span>
+        <button class="logout-btn" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </button>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="sidebar">
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="index.html" class="nav-link">
+              <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="users.html" class="nav-link active">
+              <i class="fas fa-users"></i> Người dùng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="categories.html" class="nav-link">
+              <i class="fas fa-tags"></i> Danh mục
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="products.html" class="nav-link">
+              <i class="fas fa-box"></i> Sản phẩm
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="main-content">
+        <div class="content-header">
+          <h2>Quản lý người dùng</h2>
+          <div class="breadcrumb">
+            <i class="fas fa-home"></i> Trang chủ / Người dùng
+          </div>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <div class="table-container">
+          <div
+            class="table-header"
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <div class="table-title">
+              <i class="fas fa-users"></i> Danh sách người dùng
+            </div>
+            <div class="table-actions">
+              <button class="btn btn-primary" onclick="openAddUserModal()">
+                <i class="fas fa-plus"></i> Thêm người dùng
+              </button>
+              <button class="btn btn-success" onclick="loadUsers()">
+                <i class="fas fa-refresh"></i> Làm mới
+              </button>
+            </div>
+          </div>
+
+          <div class="loading" id="usersLoading">
+            <div class="spinner"></div>
+            <p>Đang tải danh sách người dùng...</p>
+          </div>
+
+          <table class="data-table" id="usersTable" style="display: none">
+            <thead>
+              <tr>
+                <th>Họ tên</th>
+                <th>Email</th>
+                <th>Vai trò</th>
+                <th>Trạng thái</th>
+                <th>Ngày tạo</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Modal -->
+    <div class="modal" id="userModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title" id="userModalTitle">Thêm người dùng</h3>
+          <button class="close-modal" onclick="closeUserModal()">
+            &times;
+          </button>
+        </div>
+
+        <form id="userForm">
+          <input type="hidden" id="userId" />
+
+          <div class="form-group">
+            <label class="form-label" for="fullName">Họ tên</label>
+            <input
+              type="text"
+              id="fullName"
+              name="fullName"
+              class="form-control"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              class="form-control"
+              required
+            />
+          </div>
+
+          <div class="form-group" id="passwordGroup">
+            <label class="form-label" for="password">Mật khẩu</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-control"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="role">Vai trò</label>
+            <select id="role" name="role" class="form-select" required>
+              <option value="USER">Người dùng</option>
+              <option value="SELLER">Người bán</option>
+              <option value="ADMIN">Quản trị viên</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="status">Trạng thái</label>
+            <select id="status" name="status" class="form-select" required>
+              <option value="active">Hoạt động</option>
+              <option value="pending">Chờ xác minh</option>
+              <option value="inactive">Không hoạt động</option>
+            </select>
+          </div>
+
+          <div style="display: flex; gap: 1rem; margin-top: 2rem">
+            <button type="submit" class="btn btn-primary" style="flex: 1">
+              <i class="fas fa-save"></i> Lưu
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              style="flex: 1"
+              onclick="closeUserModal()"
+            >
+              <i class="fas fa-times"></i> Hủy
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/users.js"></script>
+  </body>
+</html>

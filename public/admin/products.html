@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản lý sản phẩm - Ecommerce Admin</title>
+    <link rel="stylesheet" href="css/admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="header">
+      <h1><i class="fas fa-box"></i> Quản lý sản phẩm</h1>
+      <div class="user-info">
+        <span id="adminName"><i class="fas fa-user"></i> Admin</span>
+        <button class="logout-btn" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </button>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="sidebar">
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="index.html" class="nav-link">
+              <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="users.html" class="nav-link">
+              <i class="fas fa-users"></i> Người dùng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="categories.html" class="nav-link">
+              <i class="fas fa-tags"></i> Danh mục
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="products.html" class="nav-link active">
+              <i class="fas fa-box"></i> Sản phẩm
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="main-content">
+        <div class="content-header">
+          <h2>Quản lý sản phẩm</h2>
+          <div class="breadcrumb">
+            <i class="fas fa-home"></i> Trang chủ / Sản phẩm
+          </div>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <div class="table-container">
+          <div
+            class="table-header"
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <div class="table-title">
+              <i class="fas fa-box"></i> Danh sách sản phẩm
+            </div>
+            <div class="table-actions">
+              <button class="btn btn-primary" onclick="openAddProductModal()">
+                <i class="fas fa-plus"></i> Thêm sản phẩm
+              </button>
+              <button class="btn btn-success" onclick="loadProducts()">
+                <i class="fas fa-refresh"></i> Làm mới
+              </button>
+            </div>
+          </div>
+
+          <div class="loading" id="productsLoading">
+            <div class="spinner"></div>
+            <p>Đang tải danh sách sản phẩm...</p>
+          </div>
+
+          <table class="data-table" id="productsTable" style="display: none">
+            <thead>
+              <tr>
+                <th>Hình ảnh</th>
+                <th>Tên sản phẩm</th>
+                <th>Mô tả</th>
+                <th>Cửa hàng</th>
+                <th>Danh mục</th>
+                <th>Giá gốc</th>
+                <th>Giảm giá (%)</th>
+                <th>Giá cuối</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="productsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div class="modal" id="productModal">
+      <div class="modal-content" style="max-width: 700px">
+        <div class="modal-header">
+          <h3 class="modal-title" id="productModalTitle">Thêm sản phẩm</h3>
+          <button class="close-modal" onclick="closeProductModal()">
+            &times;
+          </button>
+        </div>
+
+        <form id="productForm">
+          <input type="hidden" id="productId" />
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+            <div class="form-group">
+              <label class="form-label" for="productTitle">Tên sản phẩm</label>
+              <input
+                type="text"
+                id="productTitle"
+                name="title"
+                class="form-control"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="productStore">Cửa hàng</label>
+              <select
+                id="productStore"
+                name="store_id"
+                class="form-select"
+                required
+              >
+                <option value="">-- Chọn cửa hàng --</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="productDescription"
+              >Mô tả sản phẩm</label
+            >
+            <textarea
+              id="productDescription"
+              name="description"
+              class="form-control"
+              rows="4"
+              placeholder="Nhập mô tả chi tiết về sản phẩm..."
+            ></textarea>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+            <div class="form-group">
+              <label class="form-label" for="productCategory">Danh mục</label>
+              <select
+                id="productCategory"
+                name="category_id"
+                class="form-select"
+              >
+                <option value="">-- Chọn danh mục --</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="productStatus">Trạng thái</label>
+              <select
+                id="productStatus"
+                name="status"
+                class="form-select"
+                required
+              >
+                <option value="active">Hoạt động</option>
+                <option value="inactive">Không hoạt động</option>
+              </select>
+            </div>
+          </div>
+
+          <div
+            style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem"
+          >
+            <div class="form-group">
+              <label class="form-label" for="productPrice">Giá gốc (VNĐ)</label>
+              <input
+                type="number"
+                id="productPrice"
+                name="price"
+                class="form-control"
+                min="0"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="productDiscountPercentage"
+                >Phần trăm giảm giá (%)</label
+              >
+              <input
+                type="number"
+                id="productDiscountPercentage"
+                name="discount_percentage"
+                class="form-control"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="Ví dụ: 10 (giảm 10%)"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="productRating"
+                >Đánh giá (0-5)</label
+              >
+              <input
+                type="number"
+                id="productRating"
+                name="rating"
+                class="form-control"
+                min="0"
+                max="5"
+                step="0.1"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Hình ảnh sản phẩm</label>
+            <div class="image-upload-container">
+              <div class="image-preview" id="productImagePreview">
+                <i class="fas fa-image"></i>
+                <span>Chọn ảnh</span>
+              </div>
+              <input
+                type="file"
+                id="productImageFile"
+                accept="image/*"
+                style="display: none"
+              />
+              <input type="hidden" id="productImageUrl" name="image_url" />
+              <div class="image-upload-buttons">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  onclick="selectProductImage()"
+                >
+                  <i class="fas fa-upload"></i> Chọn file
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  onclick="removeProductImage()"
+                  style="display: none"
+                  id="removeProductImageBtn"
+                >
+                  <i class="fas fa-trash"></i> Xóa
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; margin-top: 2rem">
+            <button type="submit" class="btn btn-primary" style="flex: 1">
+              <i class="fas fa-save"></i> Lưu
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              style="flex: 1"
+              onclick="closeProductModal()"
+            >
+              <i class="fas fa-times"></i> Hủy
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/products.js"></script>
+  </body>
+</html>
