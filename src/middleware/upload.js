@@ -66,10 +66,57 @@ export const uploadSingle = (fieldName) => {
   };
 };
 
+// Storage cho review images
+const reviewStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "ecom-reviews", // Thư mục riêng cho review images
+    allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+    transformation: [
+      { width: 800, height: 800, crop: "limit" },
+      { quality: "auto" },
+    ],
+  },
+});
+
+const reviewUpload = multer({
+  storage: reviewStorage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+});
+
+// Storage cho delivery proof images
+const deliveryProofStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "ecom-delivery-proof", // Thư mục riêng cho delivery proof images
+    allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+    transformation: [
+      { width: 800, height: 800, crop: "limit" },
+      { quality: "auto" },
+    ],
+  },
+});
+
+const deliveryProofUpload = multer({
+  storage: deliveryProofStorage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+});
+
 // Middleware xử lý multiple files upload
-export const uploadMultiple = (fieldName, maxCount = 10) => {
+export const uploadMultiple = (
+  fieldName,
+  maxCount = 10,
+  useReviewFolder = false
+) => {
+  const uploadInstance = useReviewFolder ? reviewUpload : upload;
   return (req, res, next) => {
-    upload.array(fieldName, maxCount)(req, res, (err) => {
+    uploadInstance.array(fieldName, maxCount)(req, res, (err) => {
       if (err instanceof multer.MulterError) {
         if (err.code === "LIMIT_FILE_SIZE") {
           return res.status(400).json({
@@ -79,6 +126,29 @@ export const uploadMultiple = (fieldName, maxCount = 10) => {
         if (err.code === "LIMIT_UNEXPECTED_FILE") {
           return res.status(400).json({
             message: `Số lượng file vượt quá giới hạn ${maxCount}`,
+          });
+        }
+        return res.status(400).json({
+          message: "Lỗi upload file: " + err.message,
+        });
+      } else if (err) {
+        return res.status(400).json({
+          message: err.message,
+        });
+      }
+      next();
+    });
+  };
+};
+
+// Middleware upload delivery proof image
+export const uploadDeliveryProof = (fieldName = "delivery_proof_image") => {
+  return (req, res, next) => {
+    deliveryProofUpload.single(fieldName)(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({
+            message: "File quá lớn. Kích thước tối đa là 10MB",
           });
         }
         return res.status(400).json({

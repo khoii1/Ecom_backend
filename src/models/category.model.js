@@ -1,28 +1,26 @@
-import { BaseModel } from "./base.model.js";
-const tableName = "categories";
-export const CategoryModel = {
-  findMany: (args = {}) => BaseModel.findMany({ tableName, ...args }),
-  findById: (id) => BaseModel.findById({ tableName, id }),
-  create: ({ name, parent_id = null, image_url = null }) =>
-    BaseModel.insert({
-      tableName,
-      columns: ["name", "parent_id", "image_url"],
-      values: [name, parent_id, image_url],
-    }),
-  updateById: (id, patch) => BaseModel.updateById({ tableName, id, patch }),
-  deleteById: (id) => BaseModel.deleteById({ tableName, id }),
+import { mongoose } from '../config/database.js';
 
-  // Helper method để lấy categories theo hierarchy
-  findWithChildren: async () => {
-    const query = `
-      SELECT 
-        c.*,
-        COUNT(p.id) as product_count
-      FROM categories c
-      LEFT JOIN products p ON p.category_id = c.id
-      GROUP BY c.id
-      ORDER BY c.name
-    `;
-    return BaseModel.query(query);
+const categorySchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true,
   },
-};
+  parent_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
+    default: null,
+  },
+  image_url: {
+    type: String,
+    default: null,
+  },
+}, {
+  timestamps: true,
+});
+
+// Indexes
+categorySchema.index({ name: 1 });
+categorySchema.index({ parent_id: 1 });
+
+export const CategoryModel = mongoose.model('Category', categorySchema);

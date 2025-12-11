@@ -9,13 +9,13 @@ import { ROLES } from "../constants/roles.js";
 
 const router = Router();
 
-// Validation middleware
+// Validation middleware - MongoDB ObjectId
 const productIdValidation = [
-  param("productId").isInt({ min: 1 }).withMessage("ID sản phẩm không hợp lệ"),
+  param("productId").isMongoId().withMessage("ID sản phẩm không hợp lệ"),
 ];
 
 const createProductValidation = [
-  body("store_id").isInt({ min: 1 }).withMessage("ID cửa hàng không hợp lệ"),
+  body("store_id").isMongoId().withMessage("ID cửa hàng không hợp lệ"),
   body("title")
     .trim()
     .isLength({ min: 2, max: 200 })
@@ -23,7 +23,7 @@ const createProductValidation = [
 
   body("category_id")
     .optional()
-    .isInt({ min: 1 })
+    .isMongoId()
     .withMessage("ID danh mục không hợp lệ"),
   body("price")
     .isNumeric()
@@ -64,10 +64,9 @@ const updateProductValidation = [
     .trim()
     .isLength({ min: 2, max: 200 })
     .withMessage("Tiêu đề sản phẩm phải từ 2-200 ký tự"),
-  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
   body("category_id")
     .optional()
-    .isInt({ min: 1 })
+    .isMongoId()
     .withMessage("ID danh mục không hợp lệ"),
   body("price")
     .optional()

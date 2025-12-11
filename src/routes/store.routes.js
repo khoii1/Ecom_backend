@@ -6,13 +6,14 @@ import { authorizeByRoles } from "../middleware/authorization.js";
 import { validate } from "../middleware/validation.js";
 import { ROLES } from "../constants/roles.js";
 import { handle } from "../controllers/base.controller.js";
-import { databasePool } from "../config/database.js";
+import { StoreModel } from "../models/store.model.js";
+import { UserModel } from "../models/user.model.js";
 
 const router = Router();
 
-// Validation middleware
+// Validation middleware - MongoDB ObjectId
 const storeIdValidation = [
-  param("storeId").isInt({ min: 1 }).withMessage("ID cửa hàng không hợp lệ"),
+  param("storeId").isMongoId().withMessage("ID cửa hàng không hợp lệ"),
   validate,
 ];
 
@@ -25,8 +26,7 @@ const createStoreValidation = [
 ];
 
 const updateStoreValidation = [
-  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
-  param("storeId").isInt({ min: 1 }).withMessage("ID cửa hàng không hợp lệ"),
+  param("storeId").isMongoId().withMessage("ID cửa hàng không hợp lệ"),
   body("name")
     .optional()
     .trim()
@@ -53,24 +53,20 @@ router.get(
   authentication(),
   authorizeByRoles([ROLES.ADMIN]),
   handle(async (req, res) => {
-    const query = `
-      SELECT 
-        s.*, 
-        u.full_name as owner_name, 
-        u.email as owner_email 
-      FROM stores s
-      JOIN users u ON s.owner_id = u.id
-      ORDER BY s.created_at DESC
-    `;
-    const r = await databasePool.query(query);
+    const stores = await StoreModel.find({})
+      .populate('owner_id', 'full_name email')
+      .sort({ createdAt: -1 })
+      .lean();
 
-    // Format lại ID cho nhất quán
-    const stores = r.rows.map((row) => ({
-      ...row,
-      id: row.id.toString(),
-      owner_id: row.owner_id.toString(),
+    const formattedStores = stores.map((store) => ({
+      ...store,
+      id: store._id.toString(),
+      owner_id: store.owner_id?._id.toString() || store.owner_id.toString(),
+      owner_name: store.owner_id?.full_name || null,
+      owner_email: store.owner_id?.email || null,
     }));
-    res.json(stores);
+    
+    res.json(formattedStores);
   })
 );
 router.post(

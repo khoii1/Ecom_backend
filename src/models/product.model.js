@@ -1,71 +1,100 @@
-import { BaseModel } from "./base.model.js";
-const tableName = "products";
-export const ProductModel = {
-  findMany: (args = {}) => BaseModel.findMany({ tableName, ...args }),
-  findById: (id) => BaseModel.findById({ tableName, id }),
-  create: ({
-    store_id,
-    title,
-    description = null,
-    category_id = null,
-    price,
-    discount_percentage = null,
-    rating = null,
-    image_url = null,
-    status = "active",
-  }) =>
-    BaseModel.insert({
-      tableName,
-      columns: [
-        "store_id",
-        "title",
-        "description",
-        "category_id",
-        "price",
-        "discount_percentage",
-        "rating",
-        "image_url",
-        "status",
-      ],
-      values: [
-        store_id,
-        title,
-        description,
-        category_id,
-        price,
-        discount_percentage,
-        rating,
-        image_url,
-        status,
-      ],
-    }),
-  updateById: (id, patch) => BaseModel.updateById({ tableName, id, patch }),
-  deleteById: (id) => BaseModel.deleteById({ tableName, id }),
+import { mongoose } from "../config/database.js";
 
-  // Helper methods cho store ownership
-  findByStoreId: (storeId) =>
-    BaseModel.findMany({ tableName, where: { store_id: storeId } }),
-  findByCategoryId: (categoryId) =>
-    BaseModel.findMany({ tableName, where: { category_id: categoryId } }),
-
-  // Tính toán giá sau khi giảm
-  calculateFinalPrice: (price, discountPercentage) => {
-    if (!discountPercentage || discountPercentage <= 0) {
-      return price;
-    }
-    const discountAmount = (price * discountPercentage) / 100;
-    return price - discountAmount;
+const productSchema = new mongoose.Schema(
+  {
+    store_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Store",
+      required: true,
+    },
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    description: {
+      type: String,
+      default: null,
+    },
+    category_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      default: null,
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    discount_percentage: {
+      type: Number,
+      default: null,
+      min: 0,
+      max: 100,
+    },
+    rating: {
+      type: Number,
+      default: null,
+      min: 0,
+      max: 5,
+    },
+    image_url: {
+      type: String,
+      default: null,
+    },
+    image_urls: {
+      type: [String],
+      default: [],
+    },
+    stock_quantity: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    reserved_quantity: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
+    },
   },
+  {
+    timestamps: true,
+  }
+);
 
-  // Lấy products với final_price được tính toán
-  findManyWithFinalPrice: async (args = {}) => {
-    const products = await BaseModel.findMany({ tableName, ...args });
-    return products.map((product) => ({
-      ...product,
-      final_price: ProductModel.calculateFinalPrice(
-        product.price,
-        product.discount_percentage
-      ),
-    }));
-  },
+// Indexes
+productSchema.index({ store_id: 1 });
+productSchema.index({ category_id: 1 });
+productSchema.index({ status: 1 });
+
+// Virtual để tính final_price
+productSchema.virtual("final_price").get(function () {
+  if (!this.discount_percentage || this.discount_percentage <= 0) {
+    return this.price;
+  }
+  const discountAmount = (this.price * this.discount_percentage) / 100;
+  return this.price - discountAmount;
+});
+
+// Đảm bảo virtual được include khi convert to JSON
+productSchema.set("toJSON", { virtuals: true });
+productSchema.set("toObject", { virtuals: true });
+
+// Static method để tính final price
+productSchema.statics.calculateFinalPrice = function (
+  price,
+  discountPercentage
+) {
+  if (!discountPercentage || discountPercentage <= 0) {
+    return price;
+  }
+  const discountAmount = (price * discountPercentage) / 100;
+  return price - discountAmount;
 };
+
+export const ProductModel = mongoose.model("Product", productSchema);

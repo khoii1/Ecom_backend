@@ -206,10 +206,6 @@ async function openEditUserModal(userIdString) {
       "Không tìm thấy thông tin người dùng trong danh sách đã tải.",
       "error"
     );
-    console.error(
-      `User not found locally for ID string: "${userIdString}" (parsed as number: ${userIdNumber})`
-    );
-    console.log("Current users array:", users); // Log mảng users để kiểm tra cấu trúc ID
     return;
   }
 

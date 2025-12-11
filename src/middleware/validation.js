@@ -1,4 +1,5 @@
 import { validationResult } from "express-validator";
+import { logger } from "../utils/logger.js";
 
 export const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -8,6 +9,11 @@ export const validate = (req, res, next) => {
       message: error.msg,
       value: error.value,
     }));
+    
+    logger.warn('VALIDATION', `${req.method} ${req.originalUrl || req.url} → Validation failed`, {
+      errors: errorMessages,
+    });
+    
     return res.status(400).json({
       error: "Validation Error",
       message: "Dữ liệu đầu vào không hợp lệ",

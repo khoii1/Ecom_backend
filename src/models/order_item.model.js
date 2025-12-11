@@ -1,10 +1,36 @@
-import { BaseModel } from './base.model.js';
-const tableName = 'order_items';
-export const OrderItemModel = {
-  findMany: (args={}) => BaseModel.findMany({ tableName, ...args }),
-  findById: (id) => BaseModel.findById({ tableName, id }),
-  create: ({ order_id, product_id, variant_id=null, unit_price, qty }) =>
-    BaseModel.insert({ tableName, columns: ['order_id','product_id','variant_id','unit_price','qty'], values: [order_id,product_id,variant_id,unit_price,qty] }),
-  updateById: (id, patch) => BaseModel.updateById({ tableName, id, patch }),
-  deleteById: (id) => BaseModel.deleteById({ tableName, id }),
-};
+import { mongoose } from '../config/database.js';
+
+const orderItemSchema = new mongoose.Schema({
+  order_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Order',
+    required: true,
+  },
+  product_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Product',
+    required: true,
+  },
+  variant_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    default: null,
+  },
+  unit_price: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  qty: {
+    type: Number,
+    required: true,
+    min: 1,
+  },
+}, {
+  timestamps: false,
+});
+
+// Indexes
+orderItemSchema.index({ order_id: 1 });
+orderItemSchema.index({ product_id: 1 });
+
+export const OrderItemModel = mongoose.model('OrderItem', orderItemSchema);

@@ -5,38 +5,32 @@ const formatStoreForFrontend = (store) => {
   if (!store) return store;
   return {
     ...store,
-    // Chuyển đổi ID (integer) thành String
-    id: store.id.toString(),
-    // Cũng chuyển đổi owner_id để đảm bảo nhất quán
-    owner_id: store.owner_id.toString(),
+    id: store._id.toString(),
+    owner_id: store.owner_id?.toString() || store.owner_id.toString(),
   };
 };
 
 const formatStoresForFrontend = (stores) => {
   if (!Array.isArray(stores)) return stores;
-  // Áp dụng hàm format cho mỗi cửa hàng trong danh sách
   return stores.map(formatStoreForFrontend);
 };
 
 export const StoreService = {
   // Lấy tất cả stores
-  // SỬA: Thêm async/await và hàm format
   list: async () => {
-    const stores = await StoreModel.findMany({});
+    const stores = await StoreModel.find({}).lean();
     return formatStoresForFrontend(stores);
   },
 
   // Lấy stores của user hiện tại (cho seller)
-  // SỬA: Thêm async/await và hàm format
   listByOwner: async (ownerId) => {
-    const stores = await StoreModel.findByOwnerId(ownerId);
+    const stores = await StoreModel.find({ owner_id: ownerId }).lean();
     return formatStoresForFrontend(stores);
   },
 
   // Chi tiết store
-  // SỬA: Thêm async/await và hàm format
   detail: async (id) => {
-    const store = await StoreModel.findById(id);
+    const store = await StoreModel.findById(id).lean();
     return formatStoreForFrontend(store);
   },
 
@@ -47,42 +41,47 @@ export const StoreService = {
         ? payload.owner_id
         : currentUser.id;
 
-    // SỬA: Thêm hàm format cho kết quả trả về
     const newStore = await StoreModel.create({
       owner_id,
       name: payload.name,
       status: payload.status || "active",
     });
-    return formatStoreForFrontend(newStore);
+    
+    return formatStoreForFrontend(newStore.toObject());
   },
 
   // Cập nhật store - chỉ owner hoặc admin
   async update(currentUser, id, patch) {
-    const store = await StoreModel.findById(id);
+    const store = await StoreModel.findById(id).lean();
     if (!store) {
       throw new Error("Không tìm thấy cửa hàng");
     }
 
-    if (currentUser.role !== ROLES.ADMIN && store.owner_id !== currentUser.id) {
+    if (currentUser.role !== ROLES.ADMIN && store.owner_id.toString() !== currentUser.id.toString()) {
       throw new Error("Bạn không có quyền chỉnh sửa cửa hàng này");
     }
 
-    // SỬA: Thêm hàm format cho kết quả trả về
-    const updatedStore = await StoreModel.updateById(id, patch);
+    const updatedStore = await StoreModel.findByIdAndUpdate(
+      id,
+      { $set: patch },
+      { new: true, runValidators: true }
+    ).lean();
+    
     return formatStoreForFrontend(updatedStore);
   },
 
   // Xóa store - chỉ owner hoặc admin
   async remove(currentUser, id) {
-    const store = await StoreModel.findById(id);
+    const store = await StoreModel.findById(id).lean();
     if (!store) {
       throw new Error("Không tìm thấy cửa hàng");
     }
 
-    if (currentUser.role !== ROLES.ADMIN && store.owner_id !== currentUser.id) {
+    if (currentUser.role !== ROLES.ADMIN && store.owner_id.toString() !== currentUser.id.toString()) {
       throw new Error("Bạn không có quyền xóa cửa hàng này");
     }
 
-    return StoreModel.deleteById(id);
+    await StoreModel.findByIdAndDelete(id);
+    return true;
   },
 };

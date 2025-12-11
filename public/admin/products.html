@@ -15,7 +15,7 @@
       <h1><i class="fas fa-box"></i> Quản lý sản phẩm</h1>
       <div class="user-info">
         <span id="adminName"><i class="fas fa-user"></i> Admin</span>
-        <button class="logout-btn" onclick="logout()">
+        <button class="logout-btn" id="logoutBtn">
           <i class="fas fa-sign-out-alt"></i> Đăng xuất
         </button>
       </div>
@@ -44,6 +44,26 @@
               <i class="fas fa-box"></i> Sản phẩm
             </a>
           </li>
+          <li class="nav-item">
+            <a href="banners.html" class="nav-link">
+              <i class="fas fa-images"></i> Banners
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="discounts.html" class="nav-link">
+              <i class="fas fa-percent"></i> Mã giảm giá
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="orders.html" class="nav-link">
+              <i class="fas fa-shopping-cart"></i> Đơn hàng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="analytics.html" class="nav-link">
+              <i class="fas fa-chart-line"></i> Thống kê
+            </a>
+          </li>
         </ul>
       </div>
 
@@ -70,10 +90,10 @@
               <i class="fas fa-box"></i> Danh sách sản phẩm
             </div>
             <div class="table-actions">
-              <button class="btn btn-primary" onclick="openAddProductModal()">
+              <button class="btn btn-primary" id="addProductBtn">
                 <i class="fas fa-plus"></i> Thêm sản phẩm
               </button>
-              <button class="btn btn-success" onclick="loadProducts()">
+              <button class="btn btn-success" id="refreshProductsBtn">
                 <i class="fas fa-refresh"></i> Làm mới
               </button>
             </div>
@@ -110,7 +130,7 @@
       <div class="modal-content" style="max-width: 700px">
         <div class="modal-header">
           <h3 class="modal-title" id="productModalTitle">Thêm sản phẩm</h3>
-          <button class="close-modal" onclick="closeProductModal()">
+          <button class="close-modal" id="closeProductModalBtn">
             &times;
           </button>
         </div>
@@ -118,25 +138,38 @@
         <form id="productForm">
           <input type="hidden" id="productId" />
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem">
             <div class="form-group">
-              <label class="form-label" for="productTitle">Tên sản phẩm</label>
+              <label class="form-label" for="productTitle" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                <i class="fas fa-tag" style="margin-right: 8px; color: #3498db; font-size: 16px;"></i>
+                Tên sản phẩm <span style="color: #e74c3c;">*</span>
+              </label>
               <input
                 type="text"
                 id="productTitle"
                 name="title"
                 class="form-control"
                 required
+                placeholder="Nhập tên sản phẩm"
+                style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white;"
+                onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
               />
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="productStore">Cửa hàng</label>
+              <label class="form-label" for="productStore" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                <i class="fas fa-store" style="margin-right: 8px; color: #9b59b6; font-size: 16px;"></i>
+                Cửa hàng <span style="color: #e74c3c;">*</span>
+              </label>
               <select
                 id="productStore"
                 name="store_id"
                 class="form-select"
                 required
+                style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; cursor: pointer;"
+                onfocus="this.style.borderColor='#9b59b6'; this.style.boxShadow='0 0 0 3px rgba(155, 89, 182, 0.1)';"
+                onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
               >
                 <option value="">-- Chọn cửa hàng --</option>
               </select>
@@ -144,37 +177,53 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="productDescription"
-              >Mô tả sản phẩm</label
-            >
+            <label class="form-label" for="productDescription" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+              <i class="fas fa-align-left" style="margin-right: 8px; color: #16a085; font-size: 16px;"></i>
+              Mô tả sản phẩm
+            </label>
             <textarea
               id="productDescription"
               name="description"
               class="form-control"
               rows="4"
               placeholder="Nhập mô tả chi tiết về sản phẩm..."
+              style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; resize: vertical;"
+              onfocus="this.style.borderColor='#16a085'; this.style.boxShadow='0 0 0 3px rgba(22, 160, 133, 0.1)';"
+              onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
             ></textarea>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem">
             <div class="form-group">
-              <label class="form-label" for="productCategory">Danh mục</label>
+              <label class="form-label" for="productCategory" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                <i class="fas fa-folder" style="margin-right: 8px; color: #f39c12; font-size: 16px;"></i>
+                Danh mục
+              </label>
               <select
                 id="productCategory"
                 name="category_id"
                 class="form-select"
+                style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; cursor: pointer;"
+                onfocus="this.style.borderColor='#f39c12'; this.style.boxShadow='0 0 0 3px rgba(243, 156, 18, 0.1)';"
+                onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
               >
                 <option value="">-- Chọn danh mục --</option>
               </select>
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="productStatus">Trạng thái</label>
+              <label class="form-label" for="productStatus" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                <i class="fas fa-toggle-on" style="margin-right: 8px; color: #27ae60; font-size: 16px;"></i>
+                Trạng thái <span style="color: #e74c3c;">*</span>
+              </label>
               <select
                 id="productStatus"
                 name="status"
                 class="form-select"
                 required
+                style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; cursor: pointer;"
+                onfocus="this.style.borderColor='#27ae60'; this.style.boxShadow='0 0 0 3px rgba(39, 174, 96, 0.1)';"
+                onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
               >
                 <option value="active">Hoạt động</option>
                 <option value="inactive">Không hoạt động</option>
@@ -183,10 +232,13 @@
           </div>
 
           <div
-            style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem"
+            style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem"
           >
             <div class="form-group">
-              <label class="form-label" for="productPrice">Giá gốc (VNĐ)</label>
+              <label class="form-label" for="productPrice" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                <i class="fas fa-money-bill-wave" style="margin-right: 8px; color: #27ae60; font-size: 16px;"></i>
+                Giá gốc (VNĐ) <span style="color: #e74c3c;">*</span>
+              </label>
               <input
                 type="number"
                 id="productPrice"
@@ -194,13 +246,18 @@
                 class="form-control"
                 min="0"
                 required
+                style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white;"
+                onfocus="this.style.borderColor='#27ae60'; this.style.boxShadow='0 0 0 3px rgba(39, 174, 96, 0.1)';"
+                onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+                placeholder="Nhập giá sản phẩm"
               />
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="productDiscountPercentage"
-                >Phần trăm giảm giá (%)</label
-              >
+              <label class="form-label" for="productDiscountPercentage" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                <i class="fas fa-percent" style="margin-right: 8px; color: #e67e22; font-size: 16px;"></i>
+                Phần trăm giảm giá (%)
+              </label>
               <input
                 type="number"
                 id="productDiscountPercentage"
@@ -210,27 +267,43 @@
                 max="100"
                 step="0.01"
                 placeholder="Ví dụ: 10 (giảm 10%)"
+                style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white;"
+                onfocus="this.style.borderColor='#e67e22'; this.style.boxShadow='0 0 0 3px rgba(230, 126, 34, 0.1)';"
+                onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
               />
+              <small style="color: #6c757d; font-size: 12px; margin-top: 4px; display: block;">
+                Để trống nếu không có giảm giá
+              </small>
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="productRating"
-                >Đánh giá (0-5)</label
-              >
+              <label class="form-label" for="productStockQuantity" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                <i class="fas fa-boxes" style="margin-right: 8px; color: #3498db; font-size: 16px;"></i>
+                Số lượng tồn kho <span style="color: #e74c3c;">*</span>
+              </label>
               <input
                 type="number"
-                id="productRating"
-                name="rating"
+                id="productStockQuantity"
+                name="stock_quantity"
                 class="form-control"
                 min="0"
-                max="5"
-                step="0.1"
+                required
+                placeholder="0"
+                style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white;"
+                onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
               />
+              <small style="color: #6c757d; font-size: 12px; margin-top: 4px; display: block;">
+                Số lượng sản phẩm có sẵn trong kho
+              </small>
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Hình ảnh sản phẩm</label>
+            <label class="form-label" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+              <i class="fas fa-image" style="margin-right: 8px; color: #e74c3c; font-size: 16px;"></i>
+              Hình ảnh sản phẩm
+            </label>
             <div class="image-upload-container">
               <div class="image-preview" id="productImagePreview">
                 <i class="fas fa-image"></i>
@@ -241,22 +314,23 @@
                 id="productImageFile"
                 accept="image/*"
                 style="display: none"
+                aria-label="Chọn ảnh sản phẩm"
+                title="Chọn ảnh sản phẩm"
               />
               <input type="hidden" id="productImageUrl" name="image_url" />
               <div class="image-upload-buttons">
                 <button
                   type="button"
                   class="btn btn-secondary btn-sm"
-                  onclick="selectProductImage()"
+                  id="selectProductImageBtn"
                 >
                   <i class="fas fa-upload"></i> Chọn file
                 </button>
                 <button
                   type="button"
                   class="btn btn-danger btn-sm"
-                  onclick="removeProductImage()"
-                  style="display: none"
                   id="removeProductImageBtn"
+                  style="display: none"
                 >
                   <i class="fas fa-trash"></i> Xóa
                 </button>
@@ -264,17 +338,17 @@
             </div>
           </div>
 
-          <div style="display: flex; gap: 1rem; margin-top: 2rem">
-            <button type="submit" class="btn btn-primary" style="flex: 1">
-              <i class="fas fa-save"></i> Lưu
+          <div style="display: flex; gap: 1rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e0e6ed;">
+            <button type="submit" class="btn btn-primary" style="flex: 1; padding: 12px 24px; font-size: 15px; font-weight: 600; border-radius: 8px; transition: all 0.3s; box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);">
+              <i class="fas fa-save" style="margin-right: 8px;"></i> Lưu sản phẩm
             </button>
             <button
               type="button"
               class="btn btn-secondary"
-              style="flex: 1"
-              onclick="closeProductModal()"
+              style="flex: 1; padding: 12px 24px; font-size: 15px; font-weight: 600; border-radius: 8px; transition: all 0.3s; background: #95a5a6; border: none;"
+              id="cancelProductBtn"
             >
-              <i class="fas fa-times"></i> Hủy
+              <i class="fas fa-times" style="margin-right: 8px;"></i> Hủy
             </button>
           </div>
         </form>

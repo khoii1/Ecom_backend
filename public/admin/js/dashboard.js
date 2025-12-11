@@ -20,9 +20,7 @@ async function loadDashboardData() {
 async function loadStatistics() {
   try {
     // Load users count
-    // SỬA: Thêm '/admin/list' cho users (Giả định bạn cũng cần API admin cho users)
-    // Nếu chưa có, bạn cần tạo API '/users/admin/list' tương tự như stores
-    const usersResponse = await apiCall("/users"); // <-- CÓ THỂ CẦN SỬA API NÀY
+    const usersResponse = await apiCall("/users");
     if (usersResponse && usersResponse.ok) {
       const users = await usersResponse.json();
       document.getElementById("totalUsers").textContent = users.length;
@@ -49,22 +47,48 @@ async function loadStatistics() {
       document.getElementById("totalCategories").textContent = "Lỗi";
     }
 
-    // Load orders count
-    // SỬA: Dùng API GET /orders mà bạn đã tạo cho Admin
-    const storesResponse = await apiCall("/stores/admin/list"); // Gọi API lấy danh sách stores
+    // Load stores count
+    const storesResponse = await apiCall("/stores/admin/list");
     if (storesResponse && storesResponse.ok) {
       const stores = await storesResponse.json();
-      document.getElementById("totalStores").textContent = stores.length; // Cập nhật vào ID mới
+      document.getElementById("totalStores").textContent = stores.length;
     } else {
-      document.getElementById("totalStores").textContent = "Lỗi"; // Cập nhật vào ID mới
+      document.getElementById("totalStores").textContent = "Lỗi";
+    }
+
+    // Load banners count
+    const bannersResponse = await apiCall("/banners/stats");
+    if (bannersResponse && bannersResponse.ok) {
+      const bannersStats = await bannersResponse.json();
+      document.getElementById("totalBanners").textContent = bannersStats.total || 0;
+    } else {
+      document.getElementById("totalBanners").textContent = "Lỗi";
+    }
+
+    // Load analytics data (revenue & orders)
+    const analyticsResponse = await apiCall("/analytics/overview");
+    if (analyticsResponse && analyticsResponse.ok) {
+      const analytics = await analyticsResponse.json();
+      document.getElementById("totalRevenue").textContent = formatCurrency(analytics.revenue.total);
+      document.getElementById("totalOrders").textContent = analytics.orders.total;
+    } else {
+      document.getElementById("totalRevenue").textContent = "Lỗi";
+      document.getElementById("totalOrders").textContent = "Lỗi";
     }
   } catch (error) {
     console.error("Error loading statistics:", error);
     document.getElementById("totalUsers").textContent = "Lỗi";
     document.getElementById("totalProducts").textContent = "Lỗi";
     document.getElementById("totalCategories").textContent = "Lỗi";
+    document.getElementById("totalStores").textContent = "Lỗi";
+    document.getElementById("totalBanners").textContent = "Lỗi";
+    document.getElementById("totalRevenue").textContent = "Lỗi";
     document.getElementById("totalOrders").textContent = "Lỗi";
   }
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0);
 }
 
 // XÓA: Hàm loadRecentActivity() không còn dùng nữa

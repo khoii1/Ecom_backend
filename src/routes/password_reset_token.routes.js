@@ -9,8 +9,7 @@ const router = Router();
 
 // Validation middleware
 const tokenIdValidation = [
-  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
-  param("tokenId").isInt({ min: 1 }).withMessage("ID token không hợp lệ"),
+  param("tokenId").isMongoId().withMessage("ID token không hợp lệ"),
 ];
 
 // Routes - Admin only for token management

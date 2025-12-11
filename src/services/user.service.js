@@ -2,12 +2,53 @@ import { UserModel } from '../models/user.model.js';
 import { hashPassword } from '../utils/crypto.js';
 
 export const UserService = {
-  list: () => UserModel.findMany({}),
-  detail: (id) => UserModel.findById(id),
+  list: async () => {
+    const users = await UserModel.find({}).lean();
+    return users.map(u => ({
+      ...u,
+      id: u._id.toString(),
+    }));
+  },
+  
+  detail: async (id) => {
+    const user = await UserModel.findById(id).lean();
+    if (!user) return null;
+    return {
+      ...user,
+      id: user._id.toString(),
+    };
+  },
+  
   async create(_cu, payload) {
     const password_hash = await hashPassword(payload.password);
-    return UserModel.create({ full_name: payload.full_name, email: payload.email, password_hash, role: payload.role || 'USER', status: payload.status || 'active' });
+    const user = await UserModel.create({
+      full_name: payload.full_name,
+      email: payload.email,
+      password_hash,
+      role: payload.role || 'USER',
+      status: payload.status || 'active',
+    });
+    return {
+      ...user.toObject(),
+      id: user._id.toString(),
+    };
   },
-  update: (_cu, id, patch) => UserModel.updateById(id, patch),
-  remove: (_cu, id) => UserModel.deleteById(id),
+  
+  update: async (_cu, id, patch) => {
+    const user = await UserModel.findByIdAndUpdate(
+      id,
+      { $set: patch },
+      { new: true, runValidators: true }
+    ).lean();
+    if (!user) return null;
+    return {
+      ...user,
+      id: user._id.toString(),
+    };
+  },
+  
+  remove: async (_cu, id) => {
+    await UserModel.findByIdAndDelete(id);
+    return true;
+  },
 };

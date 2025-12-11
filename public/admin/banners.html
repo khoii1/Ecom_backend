@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản lý Banners - Ecommerce Admin</title>
+    <link rel="stylesheet" href="css/admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="header">
+      <h1><i class="fas fa-images"></i> Ecommerce Admin</h1>
+      <div class="user-info">
+        <span id="adminName"><i class="fas fa-user"></i> Admin</span>
+        <button class="logout-btn" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </button>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="sidebar">
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="index.html" class="nav-link">
+              <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="users.html" class="nav-link">
+              <i class="fas fa-users"></i> Người dùng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="categories.html" class="nav-link">
+              <i class="fas fa-tags"></i> Danh mục
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="products.html" class="nav-link">
+              <i class="fas fa-box"></i> Sản phẩm
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="banners.html" class="nav-link active">
+              <i class="fas fa-images"></i> Banners
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="discounts.html" class="nav-link">
+              <i class="fas fa-percent"></i> Mã giảm giá
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="orders.html" class="nav-link">
+              <i class="fas fa-shopping-cart"></i> Đơn hàng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="analytics.html" class="nav-link">
+              <i class="fas fa-chart-line"></i> Thống kê
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="main-content">
+        <div class="content-header">
+          <h2>Quản lý Banners</h2>
+          <div class="breadcrumb">
+            <i class="fas fa-home"></i> Trang chủ / Banners
+          </div>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <div class="table-header">
+          <div class="table-title">
+            <i class="fas fa-images"></i> Danh sách Banners
+          </div>
+          <div class="table-actions">
+            <input
+              type="text"
+              id="searchBanner"
+              placeholder="Tìm kiếm banner..."
+              class="search-input"
+            />
+            <button class="btn btn-primary" id="addBannerBtn">
+              <i class="fas fa-plus"></i> Thêm Banner
+            </button>
+          </div>
+        </div>
+
+        <div class="loading" id="bannersLoading">
+          <div class="spinner"></div>
+          <p>Đang tải dữ liệu...</p>
+        </div>
+
+        <table class="data-table" id="bannersTable" style="display: none">
+          <thead>
+            <tr>
+              <th>Hình ảnh</th>
+              <th>Tiêu đề</th>
+              <th>Vị trí</th>
+              <th>Thứ tự</th>
+              <th>Liên kết</th>
+              <th>Click</th>
+              <th>Trạng thái</th>
+              <th>Ngày tạo</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="bannersTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Banner Modal -->
+    <div id="bannerModal" class="modal">
+      <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+          <h3 id="modalTitle">Thêm Banner Mới</h3>
+          <span class="close" id="closeBannerModalBtn" style="cursor: pointer;">&times;</span>
+        </div>
+        <div class="modal-body" style="padding: 2rem; background: #fafbfc;">
+          <form id="bannerForm">
+            <input type="hidden" id="bannerId" />
+
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+              <label class="form-label" for="bannerTitle" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                <i class="fas fa-heading" style="margin-right: 8px; color: #3498db; font-size: 16px;"></i>
+                Tiêu đề <span class="required" style="color: #e74c3c; margin-left: 4px;">*</span>
+              </label>
+              <input
+                type="text"
+                id="bannerTitle"
+                class="form-control"
+                required
+                placeholder="Nhập tiêu đề banner"
+                style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white;"
+                onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+              />
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+              <label class="form-label" for="bannerDescription" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                <i class="fas fa-align-left" style="margin-right: 8px; color: #3498db; font-size: 16px;"></i>
+                Mô tả
+              </label>
+              <textarea
+                id="bannerDescription"
+                class="form-control"
+                rows="3"
+                placeholder="Nhập mô tả banner (tùy chọn)"
+                style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; resize: vertical; transition: all 0.3s; background: white; min-height: 80px;"
+                onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+              ></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+              <label for="bannerImage" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                <i class="fas fa-image" style="margin-right: 8px; color: #3498db; font-size: 16px;"></i>
+                Hình ảnh banner <span class="required" style="color: #e74c3c; margin-left: 4px;">*</span>
+              </label>
+              <div class="image-upload-container" style="border: 2px dashed #d0d7de; border-radius: 12px; padding: 1.5rem; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); transition: all 0.3s;">
+                <div class="image-preview" id="bannerImagePreview" style="width: 180px; height: 180px; margin: 0 auto 1rem; border-radius: 12px; border: 2px solid #e9ecef; background: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: pointer; overflow: hidden;">
+                  <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #95a5a6; margin-bottom: 0.5rem;"></i>
+                  <span style="color: #6c757d; font-size: 14px; font-weight: 500;">Chọn hoặc kéo thả ảnh</span>
+                </div>
+                <input
+                  type="file"
+                  id="bannerImageFile"
+                  accept="image/*"
+                  style="display: none"
+                  aria-label="Chọn ảnh banner"
+                  title="Chọn ảnh banner"
+                />
+                <input type="hidden" id="bannerImageUrl" name="image_url" />
+                <div class="image-upload-buttons" style="display: flex; gap: 0.75rem; justify-content: center;">
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    id="selectBannerImageBtn"
+                    style="padding: 10px 20px; font-size: 14px; border-radius: 8px; font-weight: 500; transition: all 0.3s;"
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)';"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+                  >
+                    <i class="fas fa-upload"></i> Chọn ảnh
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-danger btn-sm"
+                    id="removeBannerImageBtn"
+                    style="display: none; padding: 10px 20px; font-size: 14px; border-radius: 8px; font-weight: 500; transition: all 0.3s;"
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(220,53,69,0.3)';"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+                  >
+                    <i class="fas fa-trash"></i> Xóa
+                  </button>
+                </div>
+                <small style="color: #6c757d; margin-top: 12px; display: block; text-align: center; font-size: 13px;">
+                  <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                  Chọn ảnh từ máy tính của bạn (JPG, PNG, GIF hoặc WebP, tối đa 5MB)
+                </small>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.5rem;">
+              <div class="form-group">
+                <label class="form-label" for="bannerPosition" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                  <i class="fas fa-map-marker-alt" style="margin-right: 8px; color: #3498db; font-size: 16px;"></i>
+                  Vị trí hiển thị <span class="required" style="color: #e74c3c; margin-left: 4px;">*</span>
+                </label>
+                <select id="bannerPosition" class="form-select" required style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; cursor: pointer;"
+                  onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                  onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';">
+                  <option value="home_top">Trang chủ - Top</option>
+                  <option value="home_middle">Trang chủ - Giữa</option>
+                  <option value="home_bottom">Trang chủ - Dưới</option>
+                  <option value="category_top">Danh mục - Top</option>
+                  <option value="sidebar">Sidebar</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="bannerDisplayOrder" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                  <i class="fas fa-sort-numeric-down" style="margin-right: 8px; color: #3498db; font-size: 16px;"></i>
+                  Thứ tự hiển thị
+                </label>
+                <input
+                  type="number"
+                  id="bannerDisplayOrder"
+                  class="form-control"
+                  min="0"
+                  value="0"
+                  placeholder="Số nhỏ hơn sẽ hiển thị trước"
+                  style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white;"
+                  onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                  onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+                />
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+              <label class="form-label" for="bannerLinkType" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                <i class="fas fa-link" style="margin-right: 8px; color: #3498db; font-size: 16px;"></i>
+                Loại liên kết
+              </label>
+              <select id="bannerLinkType" class="form-select" style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; cursor: pointer;"
+                onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';">
+                <option value="none">Không có liên kết</option>
+                <option value="product">Sản phẩm</option>
+                <option value="category">Danh mục</option>
+                <option value="store">Cửa hàng</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="linkTargetGroup" style="display: none; margin-bottom: 1.5rem;">
+              <label class="form-label" id="linkTargetLabel" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                <i class="fas fa-list" style="margin-right: 8px; color: #3498db; font-size: 16px;"></i>
+                Chọn đối tượng liên kết
+              </label>
+              <select
+                id="bannerLinkTarget"
+                class="form-select"
+                style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; cursor: pointer;"
+                onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+              >
+                <option value="">-- Chọn --</option>
+              </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.5rem;">
+              <div class="form-group">
+                <label class="form-label" for="bannerStartDate" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                  <i class="fas fa-calendar-alt" style="margin-right: 8px; color: #3498db; font-size: 16px;"></i>
+                  Ngày bắt đầu
+                </label>
+                <input
+                  type="datetime-local"
+                  id="bannerStartDate"
+                  class="form-control"
+                  style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; cursor: pointer;"
+                  onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                  onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="bannerEndDate" style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;">
+                  <i class="fas fa-calendar-times" style="margin-right: 8px; color: #3498db; font-size: 16px;"></i>
+                  Ngày kết thúc (tùy chọn)
+                </label>
+                <input
+                  type="datetime-local"
+                  id="bannerEndDate"
+                  class="form-control"
+                  style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; cursor: pointer;"
+                  onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                  onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+                />
+                <small style="color: #7f8c8d; margin-top: 8px; display: block; font-size: 13px; line-height: 1.4;">
+                  <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                  Để trống nếu banner không có thời hạn
+                </small>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+              <label class="form-label" style="display: flex; align-items: center; cursor: pointer; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; background: white; transition: all 0.3s;"
+                onmouseover="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                onmouseout="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';">
+                <input
+                  type="checkbox"
+                  id="bannerIsActive"
+                  checked
+                  style="width: 20px; height: 20px; margin-right: 12px; cursor: pointer; accent-color: #27ae60;"
+                />
+                <i class="fas fa-power-off" style="margin-right: 8px; color: #27ae60; font-size: 16px;"></i>
+                <span style="font-size: 15px; font-weight: 500; color: #2c3e50;">Kích hoạt banner</span>
+              </label>
+            </div>
+
+            <div class="form-actions" style="display: flex; gap: 1rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid #ecf0f1;">
+              <button type="button" class="btn btn-secondary" id="cancelBannerBtn" style="flex: 1; padding: 14px; font-size: 15px; font-weight: 600; border-radius: 8px; transition: all 0.3s;"
+                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)';"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                <i class="fas fa-times"></i> Hủy
+              </button>
+              <button type="submit" class="btn btn-primary" style="flex: 1; padding: 14px; font-size: 15px; font-weight: 600; border-radius: 8px; transition: all 0.3s;"
+                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(52, 152, 219, 0.3)';"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                <i class="fas fa-save"></i> Lưu
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/banners.js"></script>
+  </body>
+</html>
+

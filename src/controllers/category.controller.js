@@ -72,6 +72,10 @@ export const CategoryController = {
       if (error.message.includes("Admin")) {
         return res.status(403).json({ message: error.message });
       }
+      if (error.message.includes("Không thể xóa")) {
+        // Lỗi khi có products hoặc subcategories đang sử dụng
+        return res.status(400).json({ message: error.message });
+      }
       return res.status(404).json({ message: error.message });
     }
   }),

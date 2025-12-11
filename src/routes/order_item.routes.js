@@ -4,21 +4,21 @@ import { OrderItemController } from "../controllers/order_item.controller.js";
 import { authentication } from "../middleware/authentication.js";
 import { authorizeByRoles } from "../middleware/authorization.js";
 import { ROLES } from "../constants/roles.js";
+import { validate } from "../middleware/validation.js";
 
 const router = Router();
 
-// Validation middleware
+// Validation middleware - MongoDB ObjectId
 const orderItemIdValidation = [
-  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
   param("orderItemId")
-    .isInt({ min: 1 })
+    .isMongoId()
     .withMessage("ID mục đơn hàng không hợp lệ"),
+  validate,
 ];
 
 const createOrderItemValidation = [
-  body("order_id").isInt({ min: 1 }).withMessage("ID đơn hàng không hợp lệ"),
-
-  body("product_id").isInt({ min: 1 }).withMessage("ID sản phẩm không hợp lệ"),
+  body("order_id").isMongoId().withMessage("ID đơn hàng không hợp lệ"),
+  body("product_id").isMongoId().withMessage("ID sản phẩm không hợp lệ"),
   body("unit_price")
     .isNumeric()
     .isFloat({ min: 0 })
@@ -26,9 +26,9 @@ const createOrderItemValidation = [
   body("qty").isInt({ min: 1 }).withMessage("Số lượng phải là số nguyên dương"),
   body("variant_id")
     .optional()
-    // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
-    .isInt({ min: 1 })
+    .isMongoId()
     .withMessage("ID biến thể không hợp lệ"),
+  validate,
 ];
 
 const updateOrderItemValidation = [
@@ -42,6 +42,7 @@ const updateOrderItemValidation = [
     .optional()
     .isInt({ min: 1 })
     .withMessage("Số lượng phải là số nguyên dương"),
+  validate,
 ];
 
 // Routes - Admin only for direct order item management

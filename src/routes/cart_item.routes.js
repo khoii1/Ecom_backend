@@ -4,28 +4,27 @@ import { CartItemController } from "../controllers/cart_item.controller.js";
 import { authentication } from "../middleware/authentication.js";
 import { authorizeByRoles } from "../middleware/authorization.js";
 import { ROLES } from "../constants/roles.js";
+import { validate } from "../middleware/validation.js";
 
 const router = Router();
 
-// Validation middleware
+// Validation middleware - MongoDB ObjectId
 const cartItemIdValidation = [
-  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
   param("cartItemId")
-    .isInt({ min: 1 })
+    .isMongoId()
     .withMessage("ID mục giỏ hàng không hợp lệ"),
+  validate,
 ];
 
 const createCartItemValidation = [
-  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
-  body("cart_id").isInt({ min: 1 }).withMessage("ID giỏ hàng không hợp lệ"),
-  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
-  body("product_id").isInt({ min: 1 }).withMessage("ID sản phẩm không hợp lệ"),
+  body("cart_id").isMongoId().withMessage("ID giỏ hàng không hợp lệ"),
+  body("product_id").isMongoId().withMessage("ID sản phẩm không hợp lệ"),
   body("qty").isInt({ min: 1 }).withMessage("Số lượng phải là số nguyên dương"),
   body("variant_id")
     .optional()
-    // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
-    .isInt({ min: 1 })
+    .isMongoId()
     .withMessage("ID biến thể không hợp lệ"),
+  validate,
 ];
 
 const updateCartItemValidation = [
@@ -34,6 +33,7 @@ const updateCartItemValidation = [
     .optional()
     .isInt({ min: 1 })
     .withMessage("Số lượng phải là số nguyên dương"),
+  validate,
 ];
 
 // Routes - Admin only for direct cart item management

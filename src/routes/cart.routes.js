@@ -6,24 +6,21 @@ import { CartController } from "../controllers/cart.controller.js";
 
 const router = Router();
 
-// Validation middleware
+// Validation middleware - MongoDB ObjectId
 const addItemValidation = [
-  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
-  body("product_id").isInt({ min: 1 }).withMessage("ID sản phẩm không hợp lệ"),
+  body("product_id").isMongoId().withMessage("ID sản phẩm không hợp lệ"),
   body("qty").isInt({ min: 1 }).withMessage("Số lượng phải là số nguyên dương"),
   validate,
 ];
 
 const updateItemValidation = [
-  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
-  param("itemId").isInt({ min: 1 }).withMessage("ID mục giỏ hàng không hợp lệ"),
+  param("itemId").isMongoId().withMessage("ID mục giỏ hàng không hợp lệ"),
   body("qty").isInt({ min: 1 }).withMessage("Số lượng phải là số nguyên dương"),
   validate,
 ];
 
 const itemIdValidation = [
-  // SỬA: Thay đổi isUUID() thành isInt({ min: 1 })
-  param("itemId").isInt({ min: 1 }).withMessage("ID mục giỏ hàng không hợp lệ"),
+  param("itemId").isMongoId().withMessage("ID mục giỏ hàng không hợp lệ"),
   validate,
 ];
 

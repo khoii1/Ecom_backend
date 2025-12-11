@@ -16,12 +16,10 @@ async function loadCategories() {
     if (response && response.ok) {
       categories = await response.json();
       displayCategories();
-      populateParentCategoryOptions();
     } else {
       showAlert("Lỗi khi tải danh sách danh mục", "error");
     }
   } catch (error) {
-    console.error("Error loading categories:", error);
     showAlert("Lỗi kết nối khi tải danh mục", "error");
   } finally {
     showLoading(false);
@@ -69,7 +67,6 @@ function displayCategories() {
                     </span>
                 </div>
             </td>
-            <td>${getParentCategoryName(item.category.parent_id)}</td>
             <td>${formatDate(item.category.created_at)}</td>
             <td>
                 <button class="btn btn-warning btn-sm" onclick="editCategory('${
@@ -122,32 +119,6 @@ function buildCategoryHierarchy(categoriesList) {
   return result;
 }
 
-function getParentCategoryName(parentId) {
-  if (!parentId) return '<em style="color: #6c757d;">Danh mục gốc</em>';
-  const parent = categories.find((c) => c.id === parentId);
-  return parent
-    ? parent.name
-    : '<em style="color: #dc3545;">Không tìm thấy</em>';
-}
-
-function populateParentCategoryOptions() {
-  const select = document.getElementById("parentCategory");
-  if (!select) return;
-
-  select.innerHTML = '<option value="">-- Không có danh mục cha --</option>';
-
-  // Sắp xếp categories theo tên
-  const sortedCategories = [...categories].sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
-
-  sortedCategories.forEach((category) => {
-    const option = document.createElement("option");
-    option.value = category.id;
-    option.textContent = category.name;
-    select.appendChild(option);
-  });
-}
 
 function showLoading(show) {
   const loading = document.getElementById("categoriesLoading");
@@ -179,7 +150,6 @@ function editCategory(categoryId) {
   document.getElementById("categoryModalTitle").textContent = "Sửa danh mục";
   document.getElementById("categoryId").value = category.id;
   document.getElementById("categoryName").value = category.name;
-  document.getElementById("parentCategory").value = category.parent_id || "";
   document.getElementById("categoryImageUrl").value = category.image_url || "";
 
   // Set image preview
@@ -225,13 +195,12 @@ function setupCategoryForm() {
       e.preventDefault();
 
       const formData = new FormData(this);
+      
       const categoryData = {
         name: formData.get("name"),
-        parent_id: formData.get("parent_id") || null,
         image_url: formData.get("image_url") || null,
+        // Không gửi parent_id - luôn là null (danh mục gốc)
       };
-
-      console.log("Form data being sent:", categoryData);
 
       try {
         let response;
@@ -263,7 +232,6 @@ function setupCategoryForm() {
           showAlert(errorData.message || "Có lỗi xảy ra", "error");
         }
       } catch (error) {
-        console.error("Error saving category:", error);
         showAlert("Lỗi khi lưu thông tin danh mục", "error");
       }
     });
@@ -287,7 +255,6 @@ async function deleteCategory(categoryId, categoryName) {
       showAlert(errorData.message || "Có lỗi xảy ra khi xóa", "error");
     }
   } catch (error) {
-    console.error("Error deleting category:", error);
     showAlert("Lỗi khi xóa danh mục", "error");
   }
 }

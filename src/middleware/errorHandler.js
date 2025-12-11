@@ -1,11 +1,10 @@
+import { logger } from "../utils/logger.js";
+
 export function errorHandler(err, req, res, next) {
-  console.error("Error occurred:", {
-    message: err.message,
-    stack: err.stack,
-    url: req.url,
-    method: req.method,
-    body: req.body,
-    timestamp: new Date().toISOString(),
+  logger.error('ERROR', `${req.method} ${req.originalUrl || req.url} → ${err.message}`, {
+    errorCode: err.code,
+    errorName: err.name,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
   });
 
   // Validation errors from express-validator
@@ -25,28 +24,30 @@ export function errorHandler(err, req, res, next) {
     });
   }
 
-  // PostgreSQL errors
-  if (err.code === "23505") {
-    // Unique constraint violation
+  // MongoDB errors
+  if (err.code === 11000 || err.code === 11001) {
+    // Duplicate key error (unique constraint violation)
     return res.status(409).json({
       error: "Conflict",
       message: "Dữ liệu đã tồn tại",
     });
   }
 
-  if (err.code === "23503") {
-    // Foreign key constraint violation
+  if (err.name === "ValidationError") {
+    // Mongoose validation error
+    const messages = Object.values(err.errors || {}).map(e => e.message);
     return res.status(400).json({
       error: "Bad Request",
-      message: "Tham chiếu dữ liệu không hợp lệ",
+      message: "Dữ liệu không hợp lệ",
+      details: messages,
     });
   }
 
-  if (err.code === "23502") {
-    // Not null constraint violation
+  if (err.name === "CastError") {
+    // Invalid ObjectId or type casting error
     return res.status(400).json({
       error: "Bad Request",
-      message: "Thiếu thông tin bắt buộc",
+      message: "ID hoặc dữ liệu không hợp lệ",
     });
   }
 
@@ -100,6 +101,10 @@ export function errorHandler(err, req, res, next) {
 
 // 404 handler for routes that don't exist
 export function notFoundHandler(req, res) {
+  logger.warn('HTTP', `404 - Đường dẫn không tồn tại: ${req.path}`, {
+    method: req.method,
+    path: req.path,
+  });
   res.status(404).json({
     error: "Not Found",
     message: "Đường dẫn không tồn tại",

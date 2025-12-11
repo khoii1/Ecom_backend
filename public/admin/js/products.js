@@ -29,42 +29,210 @@ function truncateText(text, maxLength) {
   return text.substr(0, maxLength) + "...";
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-  loadProducts();
-  loadCategories();
-  loadStores();
+// Hàm khởi tạo - được gọi khi DOM sẵn sàng
+function initializeProductsPage() {
+  // Setup event listeners trước
+  setupEventListeners();
   setupProductForm();
-  setupProductImageUpload(); // Ensure image upload setup is called
-});
+  setupProductImageUpload();
+  
+  // Load products ngay lập tức - KHÔNG đợi gì cả
+  loadProducts().catch(() => {
+    // Silent fail, will retry in fallback
+  });
+  
+  // Load categories và stores song song (không block products)
+  Promise.all([
+    loadCategories().catch(() => {}),
+    loadStores().catch(() => {})
+  ]).then(() => {
+    // Nếu products đã load nhưng chưa display (vì thiếu categories/stores), display lại
+    if (products && products.length > 0) {
+      displayProducts();
+    }
+  });
+}
+
+// Thử nhiều cách để đảm bảo code chạy
+if (document.readyState === 'loading') {
+  // DOM chưa load xong
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeProductsPage();
+  });
+} else {
+  // DOM đã load xong rồi - gọi ngay nhưng dùng setTimeout để đảm bảo script khác đã load
+  setTimeout(function() {
+    initializeProductsPage();
+  }, 50); // Delay nhỏ để đảm bảo các script khác đã load
+}
+
+// Fallback 1: Sau 200ms nếu chưa có dữ liệu
+setTimeout(function() {
+  const tableBody = document.getElementById("productsTableBody");
+  const loading = document.getElementById("productsLoading");
+  
+  if (!tableBody) {
+    return;
+  }
+  
+  const hasContent = tableBody.innerHTML && tableBody.innerHTML.trim() !== '';
+  const isLoading = loading && loading.style.display !== 'none';
+  
+  if ((!products || products.length === 0) && (!hasContent || isLoading)) {
+    loadProducts().catch(() => {});
+  }
+}, 200);
+
+// Fallback 2: Sau 1000ms nếu vẫn chưa có dữ liệu
+setTimeout(function() {
+  const tableBody = document.getElementById("productsTableBody");
+  if (!tableBody) return;
+  
+  const hasContent = tableBody.innerHTML && tableBody.innerHTML.trim() !== '';
+  if (!hasContent && (!products || products.length === 0)) {
+    loadProducts().catch(() => {});
+  }
+}, 1000);
+
+function setupEventListeners() {
+  // Add Product button
+  const addProductBtn = document.getElementById("addProductBtn");
+  if (addProductBtn) {
+    addProductBtn.addEventListener("click", openAddProductModal);
+  }
+  
+  // Refresh Products button
+  const refreshProductsBtn = document.getElementById("refreshProductsBtn");
+  if (refreshProductsBtn) {
+    refreshProductsBtn.addEventListener("click", loadProducts);
+  }
+  
+  // Close Modal buttons
+  const closeProductModalBtn = document.getElementById("closeProductModalBtn");
+  if (closeProductModalBtn) {
+    closeProductModalBtn.addEventListener("click", closeProductModal);
+  }
+  
+  const cancelProductBtn = document.getElementById("cancelProductBtn");
+  if (cancelProductBtn) {
+    cancelProductBtn.addEventListener("click", closeProductModal);
+  }
+  
+  // Image upload buttons
+  const selectProductImageBtn = document.getElementById("selectProductImageBtn");
+  if (selectProductImageBtn) {
+    selectProductImageBtn.addEventListener("click", selectProductImage);
+  }
+  
+  const removeProductImageBtn = document.getElementById("removeProductImageBtn");
+  if (removeProductImageBtn) {
+    removeProductImageBtn.addEventListener("click", removeProductImage);
+  }
+  
+  // Event delegation cho Edit và Delete buttons (vì chúng được tạo động)
+  const productsTableBody = document.getElementById("productsTableBody");
+  if (productsTableBody) {
+    productsTableBody.addEventListener("click", function(e) {
+      // Handle Edit button
+      if (e.target.closest(".edit-product-btn")) {
+        const btn = e.target.closest(".edit-product-btn");
+        const productId = btn.getAttribute("data-product-id");
+        if (productId) {
+          openEditProductModal(productId);
+        }
+      }
+      
+      // Handle Delete button
+      if (e.target.closest(".delete-product-btn")) {
+        const btn = e.target.closest(".delete-product-btn");
+        const productId = btn.getAttribute("data-product-id");
+        const productTitle = btn.getAttribute("data-product-title");
+        if (productId) {
+          deleteProduct(productId, productTitle || "sản phẩm");
+        }
+      }
+    });
+    
+    // Handle image error để tránh CSP violation
+    productsTableBody.addEventListener("error", function(e) {
+      if (e.target.classList.contains("product-table-image")) {
+        e.target.onerror = null; // Prevent infinite loop
+        e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect width='50' height='50' fill='%23ddd'/%3E%3C/svg%3E";
+      }
+    }, true); // Use capture phase
+  }
+}
 
 async function loadProducts() {
   try {
+    // Kiểm tra apiCall có tồn tại không
+    if (typeof apiCall !== 'function') {
+      showAlert("Lỗi: Không thể kết nối API. Vui lòng tải lại trang.", "error");
+      return;
+    }
+    
     showLoading(true);
 
     // Assuming API /products returns image_url and calculates final_price
     const response = await apiCall("/products");
+    
     if (response && response.ok) {
       products = await response.json();
+      
+      // Đảm bảo categories và stores đã được load trước khi display
+      // Nếu chưa có, thử load lại
+      if (!categories || categories.length === 0) {
+        await loadCategories();
+      }
+      if (!stores || stores.length === 0) {
+        await loadStores();
+      }
+      
+      // Hiển thị products sau khi đã có đầy đủ dữ liệu
       displayProducts();
+      
+      // Đảm bảo table được hiển thị (double check)
+      const table = document.getElementById("productsTable");
+      if (table) {
+        table.style.display = "table";
+      }
     } else {
       const errorData = response
         ? await response.json()
         : { message: "Network error" };
-      console.error("Error fetching products:", errorData);
       showAlert(
         `Lỗi khi tải danh sách sản phẩm: ${errorData.message}`,
         "error"
       );
-      document.getElementById("productsTableBody").innerHTML = `
-        <tr><td colspan="10" style="text-align: center; color: red;">Lỗi khi tải dữ liệu: ${errorData.message}</td></tr>`; // Updated colspan
+      const tbody = document.getElementById("productsTableBody");
+      const table = document.getElementById("productsTable");
+      if (tbody) {
+        tbody.innerHTML = `
+        <tr><td colspan="10" style="text-align: center; color: red;">Lỗi khi tải dữ liệu: ${errorData.message}</td></tr>`;
+      }
+      if (table) {
+        table.style.display = "table";
+      }
+      showLoading(false);
     }
   } catch (error) {
-    console.error("Error loading products:", error);
     showAlert("Lỗi kết nối khi tải sản phẩm", "error");
-    document.getElementById("productsTableBody").innerHTML = `
-        <tr><td colspan="10" style="text-align: center; color: red;">Lỗi kết nối mạng: ${error.message}</td></tr>`; // Updated colspan
-  } finally {
+    const tbody = document.getElementById("productsTableBody");
+    const table = document.getElementById("productsTable");
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr><td colspan="10" style="text-align: center; color: red;">Lỗi kết nối mạng: ${error.message}</td></tr>`;
+    }
+    if (table) {
+      table.style.display = "table";
+    }
     showLoading(false);
+  } finally {
+    // Chỉ ẩn loading nếu chưa bị lỗi (vì lỗi đã ẩn loading rồi)
+    const loading = document.getElementById("productsLoading");
+    if (loading && loading.style.display !== "none") {
+      showLoading(false);
+    }
   }
 }
 
@@ -74,11 +242,12 @@ async function loadCategories() {
     if (response && response.ok) {
       categories = await response.json();
       populateCategoryOptions();
+      return categories;
     } else {
-      console.error("Failed to load categories");
+      return [];
     }
   } catch (error) {
-    console.error("Error loading categories:", error);
+    return [];
   }
 }
 
@@ -89,11 +258,12 @@ async function loadStores() {
     if (response && response.ok) {
       stores = await response.json();
       populateStoreOptions();
+      return stores;
     } else {
-      console.error("Failed to load stores");
+      return [];
     }
   } catch (error) {
-    console.error("Error loading stores:", error);
+    return [];
   }
 }
 
@@ -119,11 +289,20 @@ function populateStoreOptions() {
 
 function displayProducts() {
   const tbody = document.getElementById("productsTableBody");
+  const table = document.getElementById("productsTable");
+  
+  if (!tbody) {
+    return;
+  }
+  
+  if (!table) {
+    return;
+  }
 
   // --- THÊM: Lấy danh sách tên cửa hàng và danh mục để tra cứu ---
   // Tạo Map để tra cứu tên nhanh hơn
-  const categoryMap = new Map(categories.map((cat) => [cat.id, cat.name]));
-  const storeMap = new Map(stores.map((store) => [store.id, store.name]));
+  const categoryMap = new Map((categories || []).map((cat) => [cat.id, cat.name]));
+  const storeMap = new Map((stores || []).map((store) => [store.id, store.name]));
   // --- KẾT THÚC THÊM ---
 
   if (!products || products.length === 0) {
@@ -135,6 +314,9 @@ function displayProducts() {
                 </td>
             </tr>
         `;
+    // Đảm bảo table được hiển thị ngay cả khi không có dữ liệu
+    table.style.display = "table";
+    showLoading(false);
     return;
   }
 
@@ -158,8 +340,8 @@ function displayProducts() {
             <td>
                 <img src="${product.image_url || "img/placeholder.png"}"
                      alt="Ảnh ${product.title || "sản phẩm"}"
+                     class="product-table-image"
                      style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #dee2e6;"
-                     onerror="this.onerror=null;this.src='img/placeholder.png';"
                      >
             </td>
             <td>${product.title || "N/A"}</td>
@@ -180,14 +362,16 @@ function displayProducts() {
                 </span>
             </td>
             <td>
-                <button class="btn btn-warning btn-sm" onclick="openEditProductModal('${
-                  product.id
-                }')" style="margin-right: 0.5rem;" title="Sửa sản phẩm">
+                <button class="btn btn-warning btn-sm edit-product-btn" 
+                        data-product-id="${product.id}"
+                        style="margin-right: 0.5rem;" 
+                        title="Sửa sản phẩm">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn btn-danger btn-sm" onclick="deleteProduct('${
-                  product.id
-                }', '${product.title}')" title="Xóa sản phẩm">
+                <button class="btn btn-danger btn-sm delete-product-btn" 
+                        data-product-id="${product.id}"
+                        data-product-title="${(product.title || '').replace(/'/g, "&#39;")}"
+                        title="Xóa sản phẩm">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -195,6 +379,12 @@ function displayProducts() {
       `;
     })
     .join("");
+  
+  // Đảm bảo table được hiển thị sau khi render xong
+  if (table) {
+    table.style.display = "table";
+  }
+  showLoading(false);
 }
 
 // Hàm helper để tính giá cuối (nếu API chưa trả về)
@@ -274,6 +464,7 @@ function openAddProductModal() {
 
   // Đặt giá trị mặc định nếu cần (ví dụ: status là active)
   document.getElementById("productStatus").value = "active";
+  document.getElementById("productStockQuantity").value = 0;
 
   document.getElementById("productModal").classList.add("show");
 }
@@ -287,7 +478,6 @@ async function openEditProductModal(productIdString) {
 
   if (!product) {
     showAlert("Không tìm thấy thông tin sản phẩm.", "error");
-    console.error(`Product not found locally for ID: "${productId}"`);
     return;
   }
 
@@ -303,6 +493,7 @@ async function openEditProductModal(productIdString) {
   document.getElementById("productPrice").value = product.price || 0;
   document.getElementById("productDiscountPercentage").value =
     product.discount_percentage || "";
+  document.getElementById("productStockQuantity").value = product.stock_quantity || 0;
   // XÓA: Không điền dữ liệu cho productRating nữa
   // document.getElementById("productRating").value = product.rating || "";
   document.getElementById("productCategory").value = product.category_id || ""; // ID dạng chuỗi
@@ -361,6 +552,7 @@ function setupProductForm() {
         discount_percentage: formData.get("discount_percentage")
           ? parseFloat(formData.get("discount_percentage"))
           : null,
+        stock_quantity: parseInt(formData.get("stock_quantity")) || 0,
         // XÓA: Không lấy dữ liệu rating nữa
         // rating: formData.get("rating") ? parseFloat(formData.get("rating")) : null,
         category_id: formData.get("category_id") || null, // Lấy đúng name="category_id"
@@ -399,6 +591,12 @@ function setupProductForm() {
         submitButton.innerHTML = '<i class="fas fa-save"></i> Lưu';
         return;
       }
+      if (isNaN(productData.stock_quantity) || productData.stock_quantity < 0) {
+        showAlert("Số lượng tồn kho phải là số nguyên không âm.", "error");
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="fas fa-save"></i> Lưu';
+        return;
+      }
       // --- Kết thúc Validation ---
 
       // --- Xử lý Upload Ảnh (Nếu có file mới được chọn) ---
@@ -430,14 +628,12 @@ function setupProductForm() {
             const errorData = uploadResponse
               ? await uploadResponse.json()
               : { message: "Lỗi mạng khi upload" };
-            console.error("Image Upload Error:", errorData);
             showAlert(`Lỗi khi tải ảnh lên: ${errorData.message}`, "error");
             submitButton.disabled = false;
             submitButton.innerHTML = '<i class="fas fa-save"></i> Lưu';
             return; // Dừng lại nếu upload lỗi
           }
         } catch (uploadError) {
-          console.error("Error uploading image:", uploadError);
           showAlert(
             `Lỗi kết nối khi tải ảnh lên: ${uploadError.message}`,
             "error"
@@ -481,11 +677,9 @@ function setupProductForm() {
           const errorData = response
             ? await response.json()
             : { message: "Lỗi không xác định" };
-          console.error("API Error saving product:", errorData);
           showAlert(`Lỗi khi lưu sản phẩm: ${errorData.message}`, "error");
         }
       } catch (error) {
-        console.error("Error saving product:", error);
         showAlert(`Lỗi kết nối khi lưu sản phẩm: ${error.message}`, "error");
       } finally {
         submitButton.disabled = false;
@@ -517,11 +711,9 @@ async function deleteProduct(productId, productName) {
       const errorData = response
         ? await response.json()
         : { message: "Lỗi không xác định" };
-      console.error("API Error deleting product:", errorData);
       showAlert(`Lỗi khi xóa sản phẩm: ${errorData.message}`, "error");
     }
   } catch (error) {
-    console.error("Error deleting product:", error);
     showAlert(`Lỗi khi xóa sản phẩm: ${error.message}`, "error");
   }
 }
@@ -610,7 +802,6 @@ function setupProductImageUpload() {
       hiddenUrlInput.value = ""; // Xóa URL cũ (nếu có) vì sẽ upload file mới
     };
     reader.onerror = function (e) {
-      console.error("FileReader error:", e);
       showAlert("Không thể đọc file ảnh đã chọn.", "error");
       removeProductImage(false);
     };

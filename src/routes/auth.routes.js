@@ -17,7 +17,7 @@ const registerValidation = [
     .withMessage("Mật khẩu phải ít nhất 6 ký tự"),
   body("role")
     .optional()
-    .isIn(["USER", "SELLER", "ADMIN"])
+    .isIn(["USER", "SELLER", "ADMIN", "SHIPPER"])
     .withMessage("Role không hợp lệ"),
   validate,
 ];
@@ -41,6 +41,11 @@ const forgotPasswordValidation = [
   validate,
 ];
 
+const resendVerificationEmailValidation = [
+  body("email").isEmail().normalizeEmail().withMessage("Email không hợp lệ"),
+  validate,
+];
+
 const resetPasswordValidation = [
   body("email").isEmail().normalizeEmail().withMessage("Email không hợp lệ"),
   body("code")
@@ -55,6 +60,11 @@ const resetPasswordValidation = [
 // Routes
 router.post("/register", registerValidation, AuthController.register);
 router.post("/verify-email", verifyEmailValidation, AuthController.verifyEmail);
+router.post(
+  "/resend-verification-email",
+  resendVerificationEmailValidation,
+  AuthController.resendVerificationEmail
+);
 router.post("/login", loginValidation, AuthController.login);
 router.post("/logout", AuthController.logout);
 router.post(
@@ -64,7 +74,7 @@ router.post(
 );
 router.post(
   "/verify-reset-code",
-  verifyEmailValidation, 
+  verifyEmailValidation,
   AuthController.verifyResetCode
 );
 

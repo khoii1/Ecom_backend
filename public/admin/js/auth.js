@@ -19,6 +19,12 @@ document.addEventListener("DOMContentLoaded", function () {
     } else {
       // Hiển thị tên admin
       displayAdminInfo();
+
+      // Setup logout button event listener
+      const logoutBtn = document.getElementById("logoutBtn");
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", logout);
+      }
     }
   }
 });
@@ -127,27 +133,62 @@ function logout() {
 async function apiCall(endpoint, options = {}) {
   const token = localStorage.getItem("access_token");
 
+  // Kiểm tra token trước khi gọi API
+  if (!token) {
+    if (!window.location.pathname.includes("login.html")) {
+      showAlert(
+        "Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.",
+        "warning"
+      );
+      setTimeout(() => {
+        logout();
+      }, 1500);
+    } else {
+      logout();
+    }
+    return null;
+  }
+
+  // Nếu là FormData, không set Content-Type (browser sẽ tự set với boundary)
+  const headers = options.isFormData
+    ? { ...(token && { Authorization: `Bearer ${token}` }), ...options.headers }
+    : {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...options.headers,
+      };
+
   const config = {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
+    headers,
     ...options,
   };
+
+  // Xóa isFormData khỏi config để không gửi lên server
+  delete config.isFormData;
 
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
-    // Nếu unauthorized, logout
+    // Nếu unauthorized, hiển thị thông báo và logout
     if (response.status === 401) {
-      logout();
+      // Kiểm tra xem có đang ở trang admin không (không phải login page)
+      if (!window.location.pathname.includes("login.html")) {
+        showAlert(
+          "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+          "warning"
+        );
+        // Delay một chút để user thấy thông báo
+        setTimeout(() => {
+          logout();
+        }, 1500);
+      } else {
+        logout();
+      }
       return null;
     }
 
     return response;
   } catch (error) {
-    console.error("API call error:", error);
     throw error;
   }
 }

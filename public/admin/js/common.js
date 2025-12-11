@@ -69,7 +69,7 @@ function showAlert(message, type = "info") {
                 }" style="margin-right: 10px;"></i>
                 <span>${message}</span>
             </div>
-            <button onclick="this.parentElement.parentElement.remove()" 
+            <button class="alert-close-btn" 
                     style="background: none; border: none; font-size: 18px; cursor: pointer; color: ${
                       color.text
                     }; margin-left: 15px;">
@@ -79,6 +79,16 @@ function showAlert(message, type = "info") {
     `;
 
   document.body.appendChild(alert);
+
+  // Setup close button event listener
+  const closeBtn = alert.querySelector(".alert-close-btn");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", function() {
+      if (alert.parentElement) {
+        alert.remove();
+      }
+    });
+  }
 
   // Auto remove after 5 seconds
   setTimeout(() => {

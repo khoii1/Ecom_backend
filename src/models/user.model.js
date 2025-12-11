@@ -1,15 +1,46 @@
-import { BaseModel } from './base.model.js';
-const tableName = 'users';
-export const UserModel = {
-  findMany: (args={}) => BaseModel.findMany({ tableName, ...args }),
-  findById: (id) => BaseModel.findById({ tableName, id }),
-  findByEmail: async (email) => {
-    const { databasePool } = await import('../config/database.js');
-    const r = await databasePool.query('SELECT * FROM users WHERE email=$1', [email]);
-    return r.rows[0] || null;
+import { mongoose } from "../config/database.js";
+
+const userSchema = new mongoose.Schema(
+  {
+    full_name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
+    },
+    password_hash: {
+      type: String,
+      required: true,
+    },
+    role: {
+      type: String,
+      enum: ["USER", "SELLER", "ADMIN", "SHIPPER"],
+      default: "USER",
+    },
+    status: {
+      type: String,
+      enum: ["pending", "active", "inactive"],
+      default: "pending",
+    },
   },
-  create: ({ full_name, email, password_hash, role='USER', status='pending' }) =>
-    BaseModel.insert({ tableName, columns: ['full_name','email','password_hash','role','status'], values: [full_name,email,password_hash,role,status] }),
-  updateById: (id, patch) => BaseModel.updateById({ tableName, id, patch }),
-  deleteById: (id) => BaseModel.deleteById({ tableName, id }),
+  {
+    timestamps: true, // Tự động tạo created_at và updated_at
+  }
+);
+
+// Indexes
+userSchema.index({ email: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ status: 1 });
+
+export const UserModel = mongoose.model("User", userSchema);
+
+// Helper methods
+UserModel.findByEmail = async function (email) {
+  return await this.findOne({ email: email.toLowerCase() }).lean();
 };

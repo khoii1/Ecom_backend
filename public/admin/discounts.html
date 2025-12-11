@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản lý Mã giảm giá - Ecommerce Admin</title>
+    <link rel="stylesheet" href="css/admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="header">
+      <h1><i class="fas fa-tachometer-alt"></i> Ecommerce Admin</h1>
+      <div class="user-info">
+        <span id="adminName"><i class="fas fa-user"></i> Admin</span>
+        <button class="logout-btn" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </button>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="sidebar">
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="index.html" class="nav-link">
+              <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="users.html" class="nav-link">
+              <i class="fas fa-users"></i> Người dùng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="categories.html" class="nav-link">
+              <i class="fas fa-tags"></i> Danh mục
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="products.html" class="nav-link">
+              <i class="fas fa-box"></i> Sản phẩm
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="banners.html" class="nav-link">
+              <i class="fas fa-images"></i> Banners
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="discounts.html" class="nav-link active">
+              <i class="fas fa-percent"></i> Mã giảm giá
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="analytics.html" class="nav-link">
+              <i class="fas fa-chart-line"></i> Thống kê
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="main-content">
+        <div class="content-header">
+          <h2>Quản lý Mã giảm giá</h2>
+          <div class="breadcrumb">
+            <i class="fas fa-home"></i> Trang chủ / Mã giảm giá
+          </div>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <!-- Danh sách mã giảm giá -->
+        <div class="table-container">
+          <div
+            class="table-header"
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <div class="table-title">
+              <i class="fas fa-list"></i> Danh sách Mã giảm giá
+            </div>
+            <div class="table-actions">
+              <button class="btn btn-primary" id="addDiscountBtn">
+                <i class="fas fa-plus"></i> Thêm mã giảm giá
+              </button>
+              <button
+                class="btn btn-success"
+                onclick="loadDiscounts()"
+                style="padding: 8px 16px; font-size: 14px"
+              >
+                <i class="fas fa-sync-alt"></i> Làm mới
+              </button>
+            </div>
+          </div>
+
+          <div class="loading" id="discountsLoading">
+            <div class="spinner"></div>
+            <p>Đang tải dữ liệu...</p>
+          </div>
+
+          <table class="data-table" id="discountsTable" style="display: none">
+            <thead>
+              <tr>
+                <th>Mã</th>
+                <th>Mô tả</th>
+                <th>Loại</th>
+                <th>Giá trị</th>
+                <th>Đã dùng</th>
+                <th>Hết hạn</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="discountsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Discount Modal -->
+    <div class="modal" id="discountModal">
+      <div class="modal-content" style="max-width: 900px">
+        <div class="modal-header">
+          <h3 class="modal-title" id="discountModalTitle">Thêm mã giảm giá</h3>
+          <button class="close-modal" id="closeDiscountModalBtn">
+            &times;
+          </button>
+        </div>
+
+        <form id="discountForm">
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.5rem;
+              "
+            >
+              <div class="form-group">
+                <label
+                  class="form-label"
+                  style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;"
+                >
+                  <i class="fas fa-tag" style="margin-right: 8px; color: #3498db; font-size: 16px;"></i>
+                  Mã giảm giá <span style="color: #e74c3c;">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="code"
+                  name="code"
+                  placeholder="VD: SALE20"
+                  required
+                  style="text-transform: uppercase; font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; width: 100%;"
+                  onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                  onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+                />
+              </div>
+              <div class="form-group">
+                <label
+                  class="form-label"
+                  style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;"
+                >
+                  <i class="fas fa-percent" style="margin-right: 8px; color: #e67e22; font-size: 16px;"></i>
+                  Loại giảm giá <span style="color: #e74c3c;">*</span>
+                </label>
+                <select
+                  id="discount_type"
+                  name="discount_type"
+                  required
+                  style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; cursor: pointer; width: 100%;"
+                  onfocus="this.style.borderColor='#e67e22'; this.style.boxShadow='0 0 0 3px rgba(230, 126, 34, 0.1)';"
+                  onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+                >
+                  <option value="percentage">Phần trăm (%)</option>
+                  <option value="fixed">Số tiền cố định (VNĐ)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label
+                  class="form-label"
+                  style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600; color: #2c3e50; font-size: 14px;"
+                >
+                  <i class="fas fa-money-bill-wave" style="margin-right: 8px; color: #27ae60; font-size: 16px;"></i>
+                  Giá trị giảm <span style="color: #e74c3c;">*</span>
+                </label>
+                <input
+                  type="number"
+                  id="discount_value"
+                  name="discount_value"
+                  placeholder="VD: 20"
+                  required
+                  min="0.01"
+                  step="0.01"
+                  style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; width: 100%;"
+                  onfocus="this.style.borderColor='#27ae60'; this.style.boxShadow='0 0 0 3px rgba(39, 174, 96, 0.1)';"
+                  onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+                />
+              </div>
+              <div class="form-group">
+                <label
+                  class="form-label"
+                  style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 500; color: #555; font-size: 14px;"
+                >
+                  <i class="fas fa-shopping-cart" style="margin-right: 8px; color: #9b59b6; font-size: 16px;"></i>
+                  Đơn hàng tối thiểu
+                </label>
+                <input
+                  type="number"
+                  id="min_order_value"
+                  name="min_order_value"
+                  placeholder="VD: 100000"
+                  min="0"
+                  style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; width: 100%;"
+                  onfocus="this.style.borderColor='#9b59b6'; this.style.boxShadow='0 0 0 3px rgba(155, 89, 182, 0.1)';"
+                  onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+                />
+              </div>
+              <div class="form-group">
+                <label
+                  class="form-label"
+                  style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 500; color: #555; font-size: 14px;"
+                >
+                  <i class="fas fa-wallet" style="margin-right: 8px; color: #16a085; font-size: 16px;"></i>
+                  Giảm tối đa (cho %)
+                </label>
+                <input
+                  type="number"
+                  id="max_discount_amount"
+                  name="max_discount_amount"
+                  placeholder="VD: 50000"
+                  min="0"
+                  style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; width: 100%;"
+                  onfocus="this.style.borderColor='#16a085'; this.style.boxShadow='0 0 0 3px rgba(22, 160, 133, 0.1)';"
+                  onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+                />
+              </div>
+              <div class="form-group">
+                <label
+                  class="form-label"
+                  style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 500; color: #555; font-size: 14px;"
+                >
+                  <i class="fas fa-repeat" style="margin-right: 8px; color: #f39c12; font-size: 16px;"></i>
+                  Số lần sử dụng tối đa
+                </label>
+                <input
+                  type="number"
+                  id="usage_limit"
+                  name="usage_limit"
+                  placeholder="Để trống = không giới hạn"
+                  min="1"
+                  style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; width: 100%;"
+                  onfocus="this.style.borderColor='#f39c12'; this.style.boxShadow='0 0 0 3px rgba(243, 156, 18, 0.1)';"
+                  onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+                />
+              </div>
+              <div class="form-group">
+                <label
+                  class="form-label"
+                  style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 500; color: #555; font-size: 14px;"
+                >
+                  <i class="fas fa-users" style="margin-right: 8px; color: #3498db; font-size: 16px;"></i>
+                  Số lượt nhận tối đa
+                </label>
+                <input
+                  type="number"
+                  id="claim_limit"
+                  name="claim_limit"
+                  placeholder="Để trống = không giới hạn"
+                  min="1"
+                  style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; width: 100%;"
+                  onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                  onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+                />
+              </div>
+              <div class="form-group" style="grid-column: span 2">
+                <label
+                  class="form-label"
+                  style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 500; color: #555; font-size: 14px;"
+                >
+                  <i class="fas fa-align-left" style="margin-right: 8px; color: #16a085; font-size: 16px;"></i>
+                  Mô tả
+                </label>
+                <input
+                  type="text"
+                  id="description"
+                  name="description"
+                  placeholder="VD: Giảm 20% cho đơn hàng đầu tiên"
+                  style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; width: 100%;"
+                  onfocus="this.style.borderColor='#16a085'; this.style.boxShadow='0 0 0 3px rgba(22, 160, 133, 0.1)';"
+                  onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+                />
+              </div>
+              <div class="form-group">
+                <label
+                  class="form-label"
+                  style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 500; color: #555; font-size: 14px;"
+                >
+                  <i class="fas fa-calendar-alt" style="margin-right: 8px; color: #e74c3c; font-size: 16px;"></i>
+                  Ngày hết hạn
+                </label>
+                <input
+                  type="datetime-local"
+                  id="end_date"
+                  name="end_date"
+                  style="font-size: 15px; padding: 12px 16px; border: 2px solid #e0e6ed; border-radius: 8px; transition: all 0.3s; background: white; width: 100%;"
+                  onfocus="this.style.borderColor='#e74c3c'; this.style.boxShadow='0 0 0 3px rgba(231, 76, 60, 0.1)';"
+                  onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+                />
+              </div>
+              <div class="form-group" style="grid-column: span 3">
+                <label
+                  class="form-label"
+                  style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 500; color: #555; font-size: 14px;"
+                >
+                  <i class="fas fa-tags" style="margin-right: 8px; color: #f39c12; font-size: 16px;"></i>
+                  Áp dụng cho danh mục (để trống = tất cả)
+                </label>
+                <div
+                  id="categoryCheckboxes"
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 12px;
+                    margin-top: 10px;
+                    max-height: 200px;
+                    overflow-y: auto;
+                    padding: 12px;
+                    border: 2px solid #e0e6ed;
+                    border-radius: 8px;
+                    background: white;
+                    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+                  "
+                >
+                  <div
+                    style="
+                      grid-column: span 4;
+                      color: #999;
+                      font-size: 13px;
+                      text-align: center;
+                      padding: 12px;
+                    "
+                  >
+                    Đang tải danh mục...
+                  </div>
+                </div>
+              </div>
+            </div>
+          <div style="display: flex; gap: 1rem; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e0e6ed;">
+            <button type="submit" class="btn btn-primary" style="flex: 1; padding: 12px 24px; font-size: 15px; font-weight: 600; border-radius: 8px; transition: all 0.3s; box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);">
+              <i class="fas fa-save" style="margin-right: 8px;"></i> Lưu mã giảm giá
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              style="flex: 1; padding: 12px 24px; font-size: 15px; font-weight: 600; border-radius: 8px; transition: all 0.3s; background: #95a5a6; border: none;"
+              id="cancelDiscountBtn"
+            >
+              <i class="fas fa-times" style="margin-right: 8px;"></i> Hủy
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+      </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+      let categories = [];
+
+      // Modal functions
+      function openAddDiscountModal() {
+        document.getElementById("discountModalTitle").textContent = "Thêm mã giảm giá";
+        document.getElementById("discountForm").reset();
+        
+        // Reset form values
+        document.getElementById("discount_type").value = "percentage";
+        document.getElementById("discountModal").classList.add("show");
+      }
+
+      function closeDiscountModal() {
+        document.getElementById("discountModal").classList.remove("show");
+        document.getElementById("discountForm").reset();
+      }
+
+      // Setup event listeners
+      document.addEventListener("DOMContentLoaded", function () {
+        loadCategories();
+        loadDiscounts();
+
+        // Add Discount button
+        const addDiscountBtn = document.getElementById("addDiscountBtn");
+        if (addDiscountBtn) {
+          addDiscountBtn.addEventListener("click", openAddDiscountModal);
+        }
+
+        // Close Modal buttons
+        const closeDiscountModalBtn = document.getElementById("closeDiscountModalBtn");
+        if (closeDiscountModalBtn) {
+          closeDiscountModalBtn.addEventListener("click", closeDiscountModal);
+        }
+
+        const cancelDiscountBtn = document.getElementById("cancelDiscountBtn");
+        if (cancelDiscountBtn) {
+          cancelDiscountBtn.addEventListener("click", closeDiscountModal);
+        }
+
+        // Form submission
+        document
+          .getElementById("discountForm")
+          .addEventListener("submit", createDiscount);
+      });
+
+      async function loadCategories() {
+        try {
+          const response = await apiCall("/categories");
+          if (response && response.ok) {
+            categories = await response.json();
+            populateCategoryCheckboxes();
+          }
+        } catch (error) {
+          console.error("Error loading categories:", error);
+        }
+      }
+
+      function populateCategoryCheckboxes() {
+        const container = document.getElementById("categoryCheckboxes");
+        if (categories.length === 0) {
+          container.innerHTML =
+            '<div style="grid-column: span 4; color: #999; text-align: center; padding: 16px; font-size: 13px;">Chưa có danh mục nào</div>';
+          return;
+        }
+
+        container.innerHTML = categories
+          .map(
+            (cat) => `
+          <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='transparent'">
+            <input type="checkbox" name="category_ids" value="${cat.id}" style="margin-right: 10px; cursor: pointer; width: 18px; height: 18px;">
+            <span style="font-size: 14px; color: #333;">${cat.name}</span>
+          </label>
+        `
+          )
+          .join("");
+      }
+
+      async function loadDiscounts() {
+        const loadingDiv = document.getElementById("discountsLoading");
+        const table = document.getElementById("discountsTable");
+        const tbody = document.getElementById("discountsTableBody");
+
+        loadingDiv.style.display = "block";
+        table.style.display = "none";
+
+        try {
+          const response = await apiCall("/discounts");
+          if (response && response.ok) {
+            const discounts = await response.json();
+
+            if (discounts.length === 0) {
+              tbody.innerHTML =
+                '<tr><td colspan="8" style="text-align: center;">Chưa có mã giảm giá nào.</td></tr>';
+            } else {
+              tbody.innerHTML = discounts
+                .map(
+                  (d) => `
+                <tr>
+                  <td><strong>${d.code}</strong></td>
+                  <td>${d.description || "-"}</td>
+                  <td>${
+                    d.discount_type === "percentage" ? "Phần trăm" : "Số tiền"
+                  }</td>
+                  <td>${
+                    d.discount_type === "percentage"
+                      ? d.discount_value + "%"
+                      : formatCurrency(d.discount_value)
+                  }</td>
+                  <td>${d.used_count || 0}${
+                    d.usage_limit ? "/" + d.usage_limit : ""
+                  }</td>
+                  <td>${
+                    d.end_date ? formatDate(d.end_date) : "Không giới hạn"
+                  }</td>
+                  <td>
+                    <span class="badge ${
+                      d.is_active ? "btn-success" : "btn-secondary"
+                    } btn-sm">
+                      ${d.is_active ? "Hoạt động" : "Tắt"}
+                    </span>
+                  </td>
+                  <td>
+                    <button class="btn btn-sm ${
+                      d.is_active ? "btn-warning" : "btn-success"
+                    }" onclick="toggleDiscount('${d.id}', ${!d.is_active})">
+                      <i class="fas fa-${d.is_active ? "pause" : "play"}"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteDiscount('${
+                      d.id
+                    }')">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              `
+                )
+                .join("");
+            }
+          } else {
+            tbody.innerHTML =
+              '<tr><td colspan="8" style="text-align: center; color: red;">Lỗi khi tải dữ liệu</td></tr>';
+          }
+        } catch (error) {
+          console.error(error);
+          tbody.innerHTML =
+            '<tr><td colspan="8" style="text-align: center; color: red;">Đã xảy ra lỗi</td></tr>';
+        } finally {
+          loadingDiv.style.display = "none";
+          table.style.display = "table";
+        }
+      }
+
+      async function createDiscount(e) {
+        e.preventDefault();
+
+        const selectedCategories = Array.from(
+          document.querySelectorAll('input[name="category_ids"]:checked')
+        ).map((cb) => cb.value);
+
+        const formData = {
+          code: document.getElementById("code").value,
+          discount_type: document.getElementById("discount_type").value,
+          discount_value: parseFloat(
+            document.getElementById("discount_value").value
+          ),
+          description:
+            document.getElementById("description").value || undefined,
+          min_order_value: document.getElementById("min_order_value").value
+            ? parseFloat(document.getElementById("min_order_value").value)
+            : undefined,
+          max_discount_amount: document.getElementById("max_discount_amount")
+            .value
+            ? parseFloat(document.getElementById("max_discount_amount").value)
+            : undefined,
+          usage_limit: document.getElementById("usage_limit").value
+            ? parseInt(document.getElementById("usage_limit").value)
+            : undefined,
+          claim_limit: document.getElementById("claim_limit").value
+            ? parseInt(document.getElementById("claim_limit").value)
+            : undefined,
+          category_ids:
+            selectedCategories.length > 0 ? selectedCategories : undefined,
+          end_date: document.getElementById("end_date").value || undefined,
+        };
+
+        try {
+          const response = await apiCall("/discounts", {
+            method: "POST",
+            body: JSON.stringify(formData),
+          });
+
+          if (response && response.ok) {
+            showAlert("Tạo mã giảm giá thành công!", "success");
+            closeDiscountModal();
+            loadDiscounts();
+          } else {
+            // Nếu response là null (do 401), không cần xử lý thêm vì đã logout
+            if (response === null) {
+              return;
+            }
+            const error = await response.json();
+            showAlert(error.message || "Lỗi khi tạo mã giảm giá", "error");
+          }
+        } catch (error) {
+          console.error("Error creating discount:", error);
+          showAlert("Đã xảy ra lỗi: " + (error.message || "Không xác định"), "error");
+        }
+      }
+
+      async function toggleDiscount(id, isActive) {
+        try {
+          const response = await apiCall(`/discounts/${id}`, {
+            method: "PUT",
+            body: JSON.stringify({ is_active: isActive }),
+          });
+
+          if (response && response.ok) {
+            showAlert("Cập nhật thành công!", "success");
+            loadDiscounts();
+          } else {
+            // Nếu response là null (do 401), không cần xử lý thêm
+            if (response === null) {
+              return;
+            }
+            const error = await response.json();
+            showAlert(error.message || "Lỗi khi cập nhật", "error");
+          }
+        } catch (error) {
+          console.error("Error toggling discount:", error);
+          showAlert("Đã xảy ra lỗi: " + (error.message || "Không xác định"), "error");
+        }
+      }
+
+      async function deleteDiscount(id) {
+        if (!confirm("Bạn có chắc muốn xóa mã giảm giá này?")) return;
+
+        try {
+          const response = await apiCall(`/discounts/${id}`, {
+            method: "DELETE",
+          });
+
+          if (response && response.ok) {
+            showAlert("Xóa mã giảm giá thành công!", "success");
+            loadDiscounts();
+          } else {
+            // Nếu response là null (do 401), không cần xử lý thêm
+            if (response === null) {
+              return;
+            }
+            const error = await response.json();
+            showAlert(error.message || "Lỗi khi xóa", "error");
+          }
+        } catch (error) {
+          console.error("Error deleting discount:", error);
+          showAlert("Đã xảy ra lỗi: " + (error.message || "Không xác định"), "error");
+        }
+      }
+
+      function formatCurrency(value) {
+        return new Intl.NumberFormat("vi-VN", {
+          style: "currency",
+          currency: "VND",
+        }).format(value);
+      }
+    </script>
+  </body>
+</html>
