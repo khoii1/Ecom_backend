@@ -107,6 +107,9 @@ function setupEventListeners() {
     refreshProductsBtn.addEventListener("click", loadProducts);
   }
   
+  // Setup filter listeners
+  setupFilterListeners();
+  
   // Close Modal buttons
   const closeProductModalBtn = document.getElementById("closeProductModalBtn");
   if (closeProductModalBtn) {
@@ -119,10 +122,7 @@ function setupEventListeners() {
   }
   
   // Image upload buttons
-  const selectProductImageBtn = document.getElementById("selectProductImageBtn");
-  if (selectProductImageBtn) {
-    selectProductImageBtn.addEventListener("click", selectProductImage);
-  }
+  // selectProductImageBtn event listener đã được setup trong setupProductImageUpload()
   
   const removeProductImageBtn = document.getElementById("removeProductImageBtn");
   if (removeProductImageBtn) {
@@ -173,8 +173,26 @@ async function loadProducts() {
     
     showLoading(true);
 
-    // Assuming API /products returns image_url and calculates final_price
-    const response = await apiCall("/products");
+    // Build query params for advanced search
+    const params = new URLSearchParams();
+    const search = document.getElementById("searchProducts")?.value?.trim();
+    const categoryId = document.getElementById("filterCategory")?.value;
+    const storeId = document.getElementById("filterStore")?.value;
+    const inStock = document.getElementById("filterInStock")?.checked;
+    const hasDiscount = document.getElementById("filterHasDiscount")?.checked;
+    const sort = document.getElementById("sortProducts")?.value;
+
+    if (search) params.append("search", search);
+    if (categoryId) params.append("category_id", categoryId);
+    if (storeId) params.append("store_id", storeId);
+    if (inStock) params.append("in_stock", "true");
+    if (hasDiscount) params.append("has_discount", "true");
+    if (sort) params.append("sort", sort);
+    params.append("limit", "1000"); // Get all products for admin
+
+    const queryString = params.toString();
+    const url = queryString ? `/products?${queryString}` : "/products";
+    const response = await apiCall(url);
     
     if (response && response.ok) {
       products = await response.json();
@@ -269,22 +287,81 @@ async function loadStores() {
 
 function populateCategoryOptions() {
   const select = document.getElementById("productCategory");
-  select.innerHTML = '<option value="">-- Chọn danh mục --</option>'; // Default empty option
-
-  categories.forEach((category) => {
-    // Assuming category object has 'id' and 'name' properties
-    select.innerHTML += `<option value="${category.id}">${category.name}</option>`;
-  });
+  const filterSelect = document.getElementById("filterCategory");
+  
+  if (select) {
+    select.innerHTML = '<option value="">-- Chọn danh mục --</option>';
+    categories.forEach((category) => {
+      select.innerHTML += `<option value="${category.id}">${category.name}</option>`;
+    });
+  }
+  
+  if (filterSelect) {
+    filterSelect.innerHTML = '<option value="">Tất cả</option>';
+    categories.forEach((category) => {
+      filterSelect.innerHTML += `<option value="${category.id}">${category.name}</option>`;
+    });
+  }
 }
 
 function populateStoreOptions() {
   const select = document.getElementById("productStore");
-  select.innerHTML = '<option value="">-- Chọn cửa hàng --</option>'; // Default empty option
+  const filterSelect = document.getElementById("filterStore");
+  
+  if (select) {
+    select.innerHTML = '<option value="">-- Chọn cửa hàng --</option>';
+    stores.forEach((store) => {
+      select.innerHTML += `<option value="${store.id}">${store.name}</option>`;
+    });
+  }
+  
+  if (filterSelect) {
+    filterSelect.innerHTML = '<option value="">Tất cả</option>';
+    stores.forEach((store) => {
+      filterSelect.innerHTML += `<option value="${store.id}">${store.name}</option>`;
+    });
+  }
+}
 
-  stores.forEach((store) => {
-    // Assuming store object has 'id' and 'name' properties
-    select.innerHTML += `<option value="${store.id}">${store.name}</option>`;
-  });
+function applyFilters() {
+  loadProducts();
+}
+
+// Add event listeners for filters
+function setupFilterListeners() {
+  const searchInput = document.getElementById("searchProducts");
+  if (searchInput) {
+    searchInput.addEventListener("keypress", function(e) {
+      if (e.key === "Enter") {
+        applyFilters();
+      }
+    });
+  }
+  
+  const filterCategory = document.getElementById("filterCategory");
+  if (filterCategory) {
+    filterCategory.addEventListener("change", applyFilters);
+  }
+  
+  const filterStore = document.getElementById("filterStore");
+  if (filterStore) {
+    filterStore.addEventListener("change", applyFilters);
+  }
+  
+  const filterInStock = document.getElementById("filterInStock");
+  if (filterInStock) {
+    filterInStock.addEventListener("change", applyFilters);
+  }
+  
+  const filterHasDiscount = document.getElementById("filterHasDiscount");
+  if (filterHasDiscount) {
+    filterHasDiscount.addEventListener("change", applyFilters);
+  }
+  
+  const sortProducts = document.getElementById("sortProducts");
+  if (sortProducts) {
+    sortProducts.addEventListener("change", applyFilters);
+  }
 }
 
 function displayProducts() {
@@ -500,20 +577,16 @@ async function openEditProductModal(productIdString) {
   document.getElementById("productStore").value = product.store_id || ""; // ID dạng chuỗi
   document.getElementById("productStatus").value = product.status || "inactive"; // Thêm dòng này
 
-  // Set product image preview
-  const preview = document.getElementById("productImagePreview");
-  const removeBtn = document.getElementById("removeProductImageBtn");
-  const hiddenUrlInput = document.getElementById("productImageUrl");
-
-  if (product.image_url) {
-    preview.innerHTML = `<img src="${product.image_url}" alt="Product Image">`;
-    removeBtn.style.display = "inline-block";
-    hiddenUrlInput.value = product.image_url;
+  // Set product images preview (hỗ trợ nhiều ảnh)
+  selectedImageFiles = []; // Reset files mới
+  if (product.image_urls && product.image_urls.length > 0) {
+    existingImageUrls = product.image_urls;
+  } else if (product.image_url) {
+    existingImageUrls = [product.image_url];
   } else {
-    preview.innerHTML = `<i class="fas fa-image"></i><span>Chọn ảnh</span>`;
-    removeBtn.style.display = "none";
-    hiddenUrlInput.value = "";
+    existingImageUrls = [];
   }
+  updateImagePreview();
   // XÓA: Không còn input productIsActive
   // document.getElementById("productIsActive").checked = product.is_active;
 
@@ -528,7 +601,9 @@ function closeProductModal() {
   isEditMode = false;
   document.getElementById("productId").value = "";
   // Reset image upload preview khi đóng
-  removeProductImage(false);
+  selectedImageFiles = [];
+  existingImageUrls = [];
+  updateImagePreview();
 }
 
 // --- Setup form submission ---
@@ -557,7 +632,7 @@ function setupProductForm() {
         // rating: formData.get("rating") ? parseFloat(formData.get("rating")) : null,
         category_id: formData.get("category_id") || null, // Lấy đúng name="category_id"
         store_id: formData.get("store_id"), // Lấy đúng name="store_id"
-        image_url: formData.get("image_url") || null, // Lấy URL từ input hidden
+        // image_url và image_urls sẽ được set trong phần upload ảnh
         status: formData.get("status"), // Lấy đúng name="status"
       };
 
@@ -599,20 +674,23 @@ function setupProductForm() {
       }
       // --- Kết thúc Validation ---
 
-      // --- Xử lý Upload Ảnh (Nếu có file mới được chọn) ---
-      const imageFile = document.getElementById("productImageFile").files[0];
-      let uploadedImageUrl = productData.image_url; // Giữ URL cũ nếu không có file mới
+      // --- Xử lý Upload Nhiều Ảnh (Nếu có file mới được chọn) ---
+      let finalImageUrls = [...existingImageUrls]; // Bắt đầu với ảnh cũ (nếu có)
 
-      if (imageFile) {
+      if (selectedImageFiles.length > 0) {
         // Hiện loading trên nút submit
         submitButton.innerHTML =
-          '<i class="fas fa-spinner fa-spin"></i> Đang tải ảnh lên...';
+          `<i class="fas fa-spinner fa-spin"></i> Đang tải ${selectedImageFiles.length} ảnh lên...`;
         try {
           const uploadFormData = new FormData();
-          uploadFormData.append("image", imageFile); // 'image' phải khớp với backend
+          
+          // Thêm tất cả file vào FormData với tên field là "images"
+          selectedImageFiles.forEach((file) => {
+            uploadFormData.append("images", file); // 'images' phải khớp với backend
+          });
 
-          // Gọi API upload ảnh của backend
-          const uploadResponse = await apiCall("/products/upload-image", {
+          // Gọi API upload nhiều ảnh của backend
+          const uploadResponse = await apiCall("/products/upload-images", {
             method: "POST",
             body: uploadFormData, // Không set Content-Type, trình duyệt sẽ tự làm
             isFormData: true, // Thêm cờ để apiCall không set Content-Type JSON
@@ -620,8 +698,21 @@ function setupProductForm() {
 
           if (uploadResponse && uploadResponse.ok) {
             const uploadResult = await uploadResponse.json();
-            uploadedImageUrl = uploadResult.image_url; // Lấy URL từ kết quả upload
-            productData.image_url = uploadedImageUrl; // Cập nhật productData để gửi đi
+            const uploadedUrls = uploadResult.image_urls || []; // Lấy danh sách URLs từ kết quả upload
+            
+            // Kết hợp ảnh cũ và ảnh mới
+            if (isEditMode && existingImageUrls.length > 0) {
+              // Khi sửa: giữ ảnh cũ và thêm ảnh mới
+              finalImageUrls = [...existingImageUrls, ...uploadedUrls];
+            } else {
+              // Khi thêm mới: chỉ dùng ảnh mới
+              finalImageUrls = uploadedUrls;
+            }
+            
+            // Cập nhật productData
+            productData.image_urls = finalImageUrls;
+            productData.image_url = finalImageUrls.length > 0 ? finalImageUrls[0] : null; // Giữ backward compatibility
+            
             submitButton.innerHTML =
               '<i class="fas fa-spinner fa-spin"></i> Đang lưu...'; // Quay lại trạng thái lưu
           } else {
@@ -641,6 +732,12 @@ function setupProductForm() {
           submitButton.disabled = false;
           submitButton.innerHTML = '<i class="fas fa-save"></i> Lưu';
           return; // Dừng lại
+        }
+      } else {
+        // Không có file mới, chỉ cập nhật với ảnh cũ (nếu có)
+        if (finalImageUrls.length > 0) {
+          productData.image_urls = finalImageUrls;
+          productData.image_url = finalImageUrls[0]; // Giữ backward compatibility
         }
       }
       // --- Kết thúc Xử lý Upload Ảnh ---
@@ -719,95 +816,234 @@ async function deleteProduct(productId, productName) {
 }
 
 // --- Product Image Upload Functions ---
-function selectProductImage() {
-  document.getElementById("productImageFile").click();
-}
+// Function selectProductImage đã được tích hợp vào setupProductImageUpload()
 
 /**
  * Xóa ảnh khỏi preview và input hidden.
  * @param {boolean} clearFileInput - Có xóa file đã chọn trong input type="file" hay không.
  */
 function removeProductImage(clearFileInput = true) {
-  const preview = document.getElementById("productImagePreview");
-  const hiddenInput = document.getElementById("productImageUrl");
-  const removeBtn = document.getElementById("removeProductImageBtn");
-
-  // Reset preview về trạng thái mặc định
-  preview.innerHTML = `
-    <i class="fas fa-image"></i>
-    <span>Chọn ảnh</span>
-  `;
-
-  // Xóa giá trị URL đã lưu
-  hiddenInput.value = "";
-
-  // Xóa file đã chọn nếu cần (thường là khi nhấn nút "Xóa")
+  // Reset tất cả ảnh
+  selectedImageFiles = [];
+  existingImageUrls = [];
+  updateImagePreview();
+  
   if (clearFileInput) {
-    document.getElementById("productImageFile").value = "";
-  }
-
-  // Ẩn nút "Xóa"
-  removeBtn.style.display = "none";
-
-  // Cập nhật productData nếu đang trong quá trình submit form (đảm bảo image_url là null)
-  if (document.getElementById("productForm").classList.contains("submitting")) {
-    // Cần thêm class 'submitting' vào form khi submit
-    const productData = getCurrentProductData(); // Cần hàm này để lấy data hiện tại
-    productData.image_url = null;
+    const fileInput = document.getElementById("productImageFile");
+    if (fileInput) fileInput.value = "";
   }
 }
 
+// Store selected image files and existing image URLs
+let selectedImageFiles = [];
+let existingImageUrls = [];
+
 function setupProductImageUpload() {
   const fileInput = document.getElementById("productImageFile");
-  const preview = document.getElementById("productImagePreview");
+  const previewContainer = document.getElementById("productImagesPreview");
   const hiddenUrlInput = document.getElementById("productImageUrl");
-  const removeBtn = document.getElementById("removeProductImageBtn");
+  const hiddenUrlsInput = document.getElementById("productImageUrls");
+  const removeAllBtn = document.getElementById("removeAllProductImagesBtn");
+  const selectBtn = document.getElementById("selectProductImageBtn");
 
-  // Xử lý khi chọn file mới
+  // Xử lý khi chọn nhiều file
   fileInput.addEventListener("change", function (e) {
-    const file = e.target.files[0];
-    if (!file) {
-      // Nếu người dùng hủy chọn file, không làm gì cả hoặc reset nếu muốn
-      // removeProductImage(false); // Bỏ comment nếu muốn reset khi hủy
+    const files = Array.from(e.target.files);
+    if (files.length === 0) {
       return;
     }
 
-    // Validate loại file
-    if (!file.type.startsWith("image/")) {
-      showAlert("Vui lòng chọn file ảnh hợp lệ (JPG, PNG, GIF, WebP)", "error");
-      fileInput.value = ""; // Xóa file không hợp lệ
-      removeProductImage(false); // Reset preview
-      return;
-    }
-
-    // Validate kích thước file (ví dụ: 10MB) - Nên khớp với backend
-    const maxSizeInBytes = 10 * 1024 * 1024;
-    if (file.size > maxSizeInBytes) {
+    // Kiểm tra số lượng ảnh tối đa (10)
+    const currentCount = selectedImageFiles.length + existingImageUrls.length;
+    const maxImages = 10;
+    
+    if (currentCount + files.length > maxImages) {
+      const remainingSlots = maxImages - currentCount;
       showAlert(
-        `Kích thước file không được vượt quá ${
-          maxSizeInBytes / (1024 * 1024)
-        }MB`,
+        `Bạn chỉ có thể chọn tối đa ${maxImages} ảnh. Hiện tại đã có ${currentCount} ảnh. Chỉ có thể thêm ${remainingSlots} ảnh nữa.`,
         "error"
       );
-      fileInput.value = ""; // Xóa file quá lớn
-      removeProductImage(false); // Reset preview
+      fileInput.value = "";
       return;
     }
 
-    // Hiển thị ảnh preview
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      preview.innerHTML = `<img src="${e.target.result}" alt="Xem trước ảnh sản phẩm">`;
-      removeBtn.style.display = "inline-block"; // Hiện nút Xóa
-      hiddenUrlInput.value = ""; // Xóa URL cũ (nếu có) vì sẽ upload file mới
-    };
-    reader.onerror = function (e) {
-      showAlert("Không thể đọc file ảnh đã chọn.", "error");
-      removeProductImage(false);
-    };
-    reader.readAsDataURL(file);
+    // Validate từng file
+    const validFiles = [];
+    const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+
+    for (const file of files) {
+      // Validate loại file
+      if (!file.type.startsWith("image/")) {
+        showAlert(`File "${file.name}" không phải là file ảnh hợp lệ.`, "error");
+        continue;
+      }
+
+      // Validate kích thước
+      if (file.size > maxSizeInBytes) {
+        showAlert(`File "${file.name}" vượt quá kích thước tối đa 10MB.`, "error");
+        continue;
+      }
+
+      validFiles.push(file);
+    }
+
+    if (validFiles.length === 0) {
+      fileInput.value = "";
+      return;
+    }
+
+    // Thêm vào danh sách file đã chọn (giữ nguyên thứ tự)
+    // Sử dụng push từng file để đảm bảo thứ tự được giữ
+    validFiles.forEach(file => {
+      selectedImageFiles.push(file);
+    });
+    updateImagePreview();
+    fileInput.value = ""; // Reset input để có thể chọn lại cùng file
   });
 
-  // Cho phép nhấn vào preview để chọn lại ảnh
-  preview.addEventListener("click", selectProductImage);
+  // Nút chọn ảnh
+  if (selectBtn) {
+    selectBtn.addEventListener("click", function() {
+      fileInput.click();
+    });
+  }
+
+  // Nút xóa tất cả
+  if (removeAllBtn) {
+    removeAllBtn.addEventListener("click", function() {
+      selectedImageFiles = [];
+      existingImageUrls = [];
+      updateImagePreview();
+    });
+  }
+}
+
+function updateImagePreview() {
+  const previewContainer = document.getElementById("productImagesPreview");
+  const removeAllBtn = document.getElementById("removeAllProductImagesBtn");
+  const hiddenUrlInput = document.getElementById("productImageUrl");
+  const hiddenUrlsInput = document.getElementById("productImageUrls");
+
+  if (!previewContainer) {
+    console.error("Preview container not found!");
+    return;
+  }
+
+  const allImages = [...existingImageUrls.map(url => ({ type: 'url', value: url })), 
+                     ...selectedImageFiles.map(file => ({ type: 'file', value: file }))];
+
+  if (allImages.length === 0) {
+    previewContainer.innerHTML = '';
+    previewContainer.style.minHeight = '60px';
+    if (removeAllBtn) removeAllBtn.style.display = 'none';
+    if (hiddenUrlInput) hiddenUrlInput.value = '';
+    if (hiddenUrlsInput) hiddenUrlsInput.value = '';
+    return;
+  }
+
+  // Hiển thị nút xóa tất cả
+  if (removeAllBtn) removeAllBtn.style.display = 'inline-block';
+
+  // Tạo preview grid với error handling
+  previewContainer.innerHTML = '';
+  
+  allImages.forEach((img, index) => {
+    const isUrl = img.type === 'url';
+    const imageId = isUrl ? `url-${index}` : `file-${index}`;
+    
+    // Tạo div container
+    const previewItem = document.createElement('div');
+    previewItem.className = 'image-preview-item';
+    previewItem.id = `preview-${imageId}`;
+    previewItem.style.cssText = 'position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 2px solid #e0e6ed; background: #f8f9fa;';
+    
+    // Tạo img element
+    const imgElement = document.createElement('img');
+    imgElement.id = `img-${imageId}`;
+    imgElement.alt = `Preview ${index + 1}`;
+    imgElement.style.cssText = 'width: 100%; height: 100%; object-fit: cover; cursor: pointer; display: block;';
+    
+    // Hiển thị loading state
+    imgElement.style.opacity = '0.5';
+    
+    if (isUrl) {
+      // Nếu là URL (ảnh từ server), dùng trực tiếp
+      imgElement.src = img.value;
+      imgElement.onclick = function() {
+        previewImage(img.value);
+      };
+      imgElement.onload = function() {
+        this.style.opacity = '1';
+      };
+    } else {
+      // Nếu là File, luôn dùng FileReader để tạo data URL
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        imgElement.src = e.target.result;
+        imgElement.style.opacity = '1';
+        imgElement.onclick = function() {
+          previewImage(e.target.result);
+        };
+      };
+      reader.onerror = function() {
+        console.error("Error reading file:", img.value.name);
+        imgElement.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23f0f0f0"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999"%3ELỗi%3C/text%3E%3C/svg%3E';
+        imgElement.style.opacity = '1';
+      };
+      reader.readAsDataURL(img.value);
+    }
+    
+    imgElement.onerror = function() {
+      this.onerror = null;
+      this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23f0f0f0"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999"%3ELỗi%3C/text%3E%3C/svg%3E';
+      this.style.opacity = '1';
+    };
+    
+    // Tạo nút xóa
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'remove-image-btn';
+    removeBtn.style.cssText = 'position: absolute; top: 4px; right: 4px; background: rgba(231, 76, 60, 0.9); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; padding: 0; z-index: 10;';
+    removeBtn.title = 'Xóa ảnh này';
+    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    removeBtn.onclick = function() {
+      removeImageAtIndex(index, isUrl);
+    };
+    
+    previewItem.appendChild(imgElement);
+    previewItem.appendChild(removeBtn);
+    previewContainer.appendChild(previewItem);
+  });
+
+
+  // Cập nhật hidden inputs
+  if (hiddenUrlsInput) {
+    const allUrls = existingImageUrls; // URLs sẽ được cập nhật sau khi upload
+    hiddenUrlsInput.value = JSON.stringify(allUrls);
+  }
+  if (hiddenUrlInput && allImages.length > 0) {
+    // Giữ backward compatibility với image_url (ảnh đầu tiên)
+    const firstImage = allImages[0];
+    if (firstImage.type === 'url') {
+      hiddenUrlInput.value = firstImage.value;
+    }
+  }
+}
+
+function removeImageAtIndex(index, isUrl) {
+  if (isUrl) {
+    existingImageUrls.splice(index, 1);
+  } else {
+    // Tìm index trong selectedImageFiles (bỏ qua existingImageUrls)
+    const fileIndex = index - existingImageUrls.length;
+    if (fileIndex >= 0 && fileIndex < selectedImageFiles.length) {
+      selectedImageFiles.splice(fileIndex, 1);
+    }
+  }
+  updateImagePreview();
+}
+
+function previewImage(src) {
+  // Mở modal xem ảnh fullscreen (có thể implement sau)
+  window.open(src, '_blank');
 }

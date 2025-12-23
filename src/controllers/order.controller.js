@@ -5,17 +5,22 @@ import { logger } from "../utils/logger.js";
 export const OrderController = {
   createFromCart: handle(async (req, res) => {
     const userId = req.currentUser.id;
-    const { discount_id, payment_method = "cash" } = req.body; // Nhận discount_id và payment_method từ request
+    const { discount_id, payment_method = "cash", shipping_code, shipping_address_id, shipping_fee = 0 } = req.body;
     logger.info("ORDER", "Yêu cầu tạo đơn hàng từ giỏ hàng", {
       userId,
       discountId: discount_id,
       paymentMethod: payment_method,
+      shippingCode: shipping_code,
+      shippingAddressId: shipping_address_id,
     });
     try {
       const order = await OrderService.createFromCart(
         userId,
         discount_id,
-        payment_method
+        payment_method,
+        shipping_code,
+        shipping_address_id,
+        shipping_fee
       );
       logger.info("ORDER", "Tạo đơn hàng thành công", {
         orderId: order.id,
@@ -105,5 +110,45 @@ export const OrderController = {
       userId,
     });
     res.json(updated);
+  }),
+
+  cancel: handle(async (req, res) => {
+    const userId = req.currentUser.id;
+    const orderId = req.params.orderId;
+    const { reason } = req.body;
+
+    logger.info("ORDER", "Yêu cầu hủy đơn hàng", {
+      orderId,
+      userId,
+      reason,
+    });
+
+    try {
+      const order = await OrderService.cancelOrder(orderId, req.currentUser, reason);
+      logger.info("ORDER", "Hủy đơn hàng thành công", {
+        orderId,
+        userId,
+      });
+      res.json({
+        message: "Đơn hàng đã được hủy thành công",
+        order,
+      });
+    } catch (error) {
+      logger.error("ORDER", "Hủy đơn hàng thất bại", {
+        error: error.message,
+        orderId,
+        userId,
+      });
+      if (error.message.includes("không có quyền")) {
+        return res.status(403).json({ message: error.message });
+      }
+      if (error.message.includes("không tồn tại")) {
+        return res.status(404).json({ message: error.message });
+      }
+      if (error.message.includes("Không thể hủy")) {
+        return res.status(400).json({ message: error.message });
+      }
+      throw error;
+    }
   }),
 };

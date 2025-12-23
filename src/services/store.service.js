@@ -31,7 +31,46 @@ export const StoreService = {
   // Chi tiết store
   detail: async (id) => {
     const store = await StoreModel.findById(id).lean();
-    return formatStoreForFrontend(store);
+    if (!store) return null;
+    
+    // Tính rating trung bình từ reviews của các sản phẩm trong store
+    const { ReviewModel } = await import("../models/review.model.js");
+    const { ProductModel } = await import("../models/product.model.js");
+    const mongoose = (await import("../config/database.js")).mongoose;
+    const ObjectId = mongoose.Types.ObjectId;
+    
+    const storeObjectId = new ObjectId(id);
+    
+    // Lấy tất cả product IDs của store
+    const products = await ProductModel.find({ store_id: storeObjectId }).select('_id').lean();
+    const productIds = products.map(p => p._id);
+    
+    let averageRating = 0;
+    if (productIds.length > 0) {
+      const reviewsResult = await ReviewModel.aggregate([
+        {
+          $match: {
+            product_id: { $in: productIds }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            average_rating: { $avg: "$rating" },
+            total_reviews: { $sum: 1 }
+          }
+        }
+      ]);
+      
+      if (reviewsResult.length > 0 && reviewsResult[0].average_rating) {
+        averageRating = Math.round(reviewsResult[0].average_rating * 10) / 10;
+      }
+    }
+    
+    const formattedStore = formatStoreForFrontend(store);
+    formattedStore.average_rating = averageRating;
+    
+    return formattedStore;
   },
 
   // Tạo store

@@ -25,17 +25,18 @@ router.get(
     const revenueResult = await OrderModel.aggregate([
       {
         $match: {
-          status: { $in: ['paid', 'delivered', 'shipped'] }
-        }
+          status: { $in: ["paid", "delivered", "shipped"] },
+        },
       },
       {
         $group: {
           _id: null,
-          total_revenue: { $sum: '$total' }
-        }
-      }
+          total_revenue: { $sum: "$total" },
+        },
+      },
     ]);
-    const totalRevenue = revenueResult.length > 0 ? revenueResult[0].total_revenue : 0;
+    const totalRevenue =
+      revenueResult.length > 0 ? revenueResult[0].total_revenue : 0;
 
     // Số đơn hàng theo trạng thái
     const ordersResult = await OrderModel.aggregate([
@@ -44,35 +45,38 @@ router.get(
           _id: null,
           total_orders: { $sum: 1 },
           pending_orders: {
-            $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$status", "pending"] }, 1, 0] },
           },
           paid_orders: {
-            $sum: { $cond: [{ $eq: ['$status', 'paid'] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$status", "paid"] }, 1, 0] },
           },
           shipped_orders: {
-            $sum: { $cond: [{ $eq: ['$status', 'shipped'] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$status", "shipped"] }, 1, 0] },
           },
           delivered_orders: {
-            $sum: { $cond: [{ $eq: ['$status', 'delivered'] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$status", "delivered"] }, 1, 0] },
           },
           cancelled_orders: {
-            $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$status", "cancelled"] }, 1, 0] },
           },
           failed_orders: {
-            $sum: { $cond: [{ $eq: ['$status', 'payment_failed'] }, 1, 0] }
+            $sum: { $cond: [{ $eq: ["$status", "payment_failed"] }, 1, 0] },
           },
-        }
-      }
+        },
+      },
     ]);
-    const orders = ordersResult.length > 0 ? ordersResult[0] : {
-      total_orders: 0,
-      pending_orders: 0,
-      paid_orders: 0,
-      shipped_orders: 0,
-      delivered_orders: 0,
-      cancelled_orders: 0,
-      failed_orders: 0,
-    };
+    const orders =
+      ordersResult.length > 0
+        ? ordersResult[0]
+        : {
+            total_orders: 0,
+            pending_orders: 0,
+            paid_orders: 0,
+            shipped_orders: 0,
+            delivered_orders: 0,
+            cancelled_orders: 0,
+            failed_orders: 0,
+          };
 
     // Số lượng users, products, stores
     const [
@@ -81,61 +85,61 @@ router.get(
       totalSellers,
       totalProducts,
       totalStores,
-      totalCategories
+      totalCategories,
     ] = await Promise.all([
       UserModel.countDocuments({}),
-      UserModel.countDocuments({ role: 'USER' }),
-      UserModel.countDocuments({ role: 'SELLER' }),
-      ProductModel.countDocuments({ status: 'active' }),
-      StoreModel.countDocuments({ status: 'active' }),
-      CategoryModel.countDocuments({})
+      UserModel.countDocuments({ role: "USER" }),
+      UserModel.countDocuments({ role: "SELLER" }),
+      ProductModel.countDocuments({ status: "active" }),
+      StoreModel.countDocuments({ status: "active" }),
+      CategoryModel.countDocuments({}),
     ]);
 
     // Top 5 sản phẩm bán chạy
     const topProductsResult = await OrderItemModel.aggregate([
       {
         $lookup: {
-          from: 'orders',
-          localField: 'order_id',
-          foreignField: '_id',
-          as: 'order'
-        }
+          from: "orders",
+          localField: "order_id",
+          foreignField: "_id",
+          as: "order",
+        },
       },
       {
-        $unwind: '$order'
+        $unwind: "$order",
       },
       {
         $match: {
-          'order.status': { $in: ['paid', 'delivered', 'shipped'] }
-        }
+          "order.status": { $in: ["paid", "delivered", "shipped"] },
+        },
       },
       {
         $lookup: {
-          from: 'products',
-          localField: 'product_id',
-          foreignField: '_id',
-          as: 'product'
-        }
+          from: "products",
+          localField: "product_id",
+          foreignField: "_id",
+          as: "product",
+        },
       },
       {
-        $unwind: '$product'
+        $unwind: "$product",
       },
       {
         $group: {
-          _id: '$product_id',
-          title: { $first: '$product.title' },
-          image_url: { $first: '$product.image_url' },
-          price: { $first: '$product.price' },
-          total_sold: { $sum: '$qty' },
-          total_revenue: { $sum: { $multiply: ['$qty', '$unit_price'] } }
-        }
+          _id: "$product_id",
+          title: { $first: "$product.title" },
+          image_url: { $first: "$product.image_url" },
+          price: { $first: "$product.price" },
+          total_sold: { $sum: "$qty" },
+          total_revenue: { $sum: { $multiply: ["$qty", "$unit_price"] } },
+        },
       },
       {
-        $sort: { total_sold: -1 }
+        $sort: { total_sold: -1 },
       },
       {
-        $limit: 5
-      }
+        $limit: 5,
+      },
     ]);
 
     res.json({
@@ -189,14 +193,14 @@ router.get(
         dateFormat = "%Y-%m";
         groupBy = {
           year: { $year: "$createdAt" },
-          month: { $month: "$createdAt" }
+          month: { $month: "$createdAt" },
         };
         break;
       case "weekly":
         dateFormat = "%Y-W%V";
         groupBy = {
           year: { $year: "$createdAt" },
-          week: { $week: "$createdAt" }
+          week: { $week: "$createdAt" },
         };
         break;
       default:
@@ -204,38 +208,41 @@ router.get(
         groupBy = {
           year: { $year: "$createdAt" },
           month: { $month: "$createdAt" },
-          day: { $dayOfMonth: "$createdAt" }
+          day: { $dayOfMonth: "$createdAt" },
         };
     }
 
     const result = await OrderModel.aggregate([
       {
         $match: {
-          status: { $in: ['paid', 'delivered', 'shipped'] },
-          createdAt: { $gte: daysAgo }
-        }
+          status: { $in: ["paid", "delivered", "shipped"] },
+          createdAt: { $gte: daysAgo },
+        },
       },
       {
         $group: {
           _id: groupBy,
           order_count: { $sum: 1 },
-          revenue: { $sum: '$total' }
-        }
+          revenue: { $sum: "$total" },
+        },
       },
       {
-        $sort: { '_id': 1 }
-      }
+        $sort: { _id: 1 },
+      },
     ]);
 
     res.json(
       result.map((r) => {
-        let periodStr = '';
-        if (period === 'monthly') {
-          periodStr = `${r._id.year}-${String(r._id.month).padStart(2, '0')}`;
-        } else if (period === 'weekly') {
-          periodStr = `${r._id.year}-W${String(r._id.week).padStart(2, '0')}`;
+        let periodStr = "";
+        if (period === "monthly") {
+          periodStr = `${r._id.year}-${String(r._id.month).padStart(2, "0")}`;
+        } else if (period === "weekly") {
+          periodStr = `${r._id.year}-W${String(r._id.week).padStart(2, "0")}`;
         } else {
-          periodStr = `${r._id.year}-${String(r._id.month).padStart(2, '0')}-${String(r._id.day).padStart(2, '0')}`;
+          periodStr = `${r._id.year}-${String(r._id.month).padStart(
+            2,
+            "0"
+          )}-${String(r._id.day).padStart(2, "0")}`;
         }
         return {
           period: periodStr,
@@ -252,11 +259,19 @@ router.get(
   "/store/:storeId",
   authentication(),
   authorizeByRoles([ROLES.SELLER, ROLES.ADMIN]),
-  [param("storeId").isMongoId().withMessage("ID cửa hàng không hợp lệ"), validate],
+  [
+    param("storeId").isMongoId().withMessage("ID cửa hàng không hợp lệ"),
+    validate,
+  ],
   handle(async (req, res) => {
     const storeId = req.params.storeId;
     const userId = req.currentUser.id;
     const userRole = req.currentUser.role;
+
+    // Import mongoose để convert string sang ObjectId
+    const { mongoose } = await import("../config/database.js");
+    const ObjectId = mongoose.Types.ObjectId;
+    const storeObjectId = new ObjectId(storeId);
 
     // Kiểm tra quyền truy cập store
     if (userRole !== ROLES.ADMIN) {
@@ -272,139 +287,241 @@ router.get(
     const revenueResult = await OrderModel.aggregate([
       {
         $match: {
-          store_id: storeId,
-          status: { $in: ['paid', 'delivered', 'shipped'] }
-        }
+          store_id: storeObjectId,
+          status: { $in: ["paid", "delivered", "shipped"] },
+        },
       },
       {
         $group: {
           _id: null,
-          total_revenue: { $sum: '$total' },
-          total_orders: { $sum: 1 }
-        }
-      }
+          total_revenue: { $sum: "$total" },
+          total_orders: { $sum: 1 },
+        },
+      },
     ]);
-    const revenue = revenueResult.length > 0 ? revenueResult[0] : {
-      total_revenue: 0,
-      total_orders: 0
-    };
+    const revenue =
+      revenueResult.length > 0
+        ? revenueResult[0]
+        : {
+            total_revenue: 0,
+            total_orders: 0,
+          };
 
     // Số sản phẩm
-    const totalProducts = await ProductModel.countDocuments({ store_id: storeId });
+    const totalProducts = await ProductModel.countDocuments({
+      store_id: storeObjectId,
+    });
 
     // Top sản phẩm của store
     const topProductsResult = await ProductModel.aggregate([
       {
-        $match: { store_id: storeId }
+        $match: { store_id: storeObjectId },
       },
       {
         $lookup: {
-          from: 'orderitems',
-          localField: '_id',
-          foreignField: 'product_id',
-          as: 'orderItems'
-        }
+          from: "orderitems",
+          localField: "_id",
+          foreignField: "product_id",
+          as: "orderItems",
+        },
       },
       {
         $unwind: {
-          path: '$orderItems',
-          preserveNullAndEmptyArrays: true
-        }
+          path: "$orderItems",
+          preserveNullAndEmptyArrays: true,
+        },
       },
       {
         $lookup: {
-          from: 'orders',
-          localField: 'orderItems.order_id',
-          foreignField: '_id',
-          as: 'order'
-        }
+          from: "orders",
+          localField: "orderItems.order_id",
+          foreignField: "_id",
+          as: "order",
+        },
       },
       {
         $unwind: {
-          path: '$order',
-          preserveNullAndEmptyArrays: true
-        }
+          path: "$order",
+          preserveNullAndEmptyArrays: true,
+        },
       },
       {
         $match: {
           $or: [
-            { 'order.status': { $in: ['paid', 'delivered', 'shipped'] } },
-            { order: { $exists: false } }
-          ]
-        }
+            { "order.status": { $in: ["paid", "delivered", "shipped"] } },
+            { order: { $exists: false } },
+          ],
+        },
       },
       {
         $group: {
-          _id: '$_id',
-          title: { $first: '$title' },
-          image_url: { $first: '$image_url' },
-          price: { $first: '$price' },
+          _id: "$_id",
+          title: { $first: "$title" },
+          image_url: { $first: "$image_url" },
+          price: { $first: "$price" },
           total_sold: {
             $sum: {
               $cond: [
-                { $in: ['$order.status', ['paid', 'delivered', 'shipped']] },
-                '$orderItems.qty',
-                0
-              ]
-            }
-          }
-        }
+                { $in: ["$order.status", ["paid", "delivered", "shipped"]] },
+                "$orderItems.qty",
+                0,
+              ],
+            },
+          },
+        },
       },
       {
-        $sort: { total_sold: -1 }
+        $sort: { total_sold: -1 },
       },
       {
-        $limit: 5
-      }
+        $limit: 5,
+      },
     ]);
 
     // Đánh giá trung bình của store
     const reviewsResult = await ReviewModel.aggregate([
       {
         $lookup: {
-          from: 'products',
-          localField: 'product_id',
-          foreignField: '_id',
-          as: 'product'
-        }
+          from: "products",
+          localField: "product_id",
+          foreignField: "_id",
+          as: "product",
+        },
       },
       {
-        $unwind: '$product'
+        $unwind: "$product",
       },
       {
         $match: {
-          'product.store_id': storeId
-        }
+          "product.store_id": storeObjectId,
+        },
       },
       {
         $group: {
           _id: null,
           total_reviews: { $sum: 1 },
-          average_rating: { $avg: '$rating' }
-        }
-      }
+          average_rating: { $avg: "$rating" },
+        },
+      },
     ]);
-    const reviews = reviewsResult.length > 0 ? reviewsResult[0] : {
-      total_reviews: 0,
-      average_rating: 0
-    };
+    const reviews =
+      reviewsResult.length > 0
+        ? reviewsResult[0]
+        : {
+            total_reviews: 0,
+            average_rating: 0,
+          };
+
+    // Đảm bảo revenue là số hợp lệ, không phải NaN
+    const revenueValue = parseFloat(revenue.total_revenue) || 0;
+    const finalRevenue = isNaN(revenueValue) ? 0 : revenueValue;
+
+    // Đảm bảo average_rating là số hợp lệ
+    const avgRating = reviews.average_rating || 0;
+    const finalAvgRating = isNaN(avgRating)
+      ? 0
+      : Math.round(avgRating * 10) / 10;
 
     res.json({
-      revenue: parseFloat(revenue.total_revenue),
-      total_orders: revenue.total_orders,
-      total_products: totalProducts,
+      revenue: finalRevenue,
+      total_orders: revenue.total_orders || 0,
+      total_products: totalProducts || 0,
       reviews: {
-        total: reviews.total_reviews,
-        average_rating: Math.round((reviews.average_rating || 0) * 10) / 10,
+        total: reviews.total_reviews || 0,
+        average_rating: finalAvgRating,
       },
       topProducts: topProductsResult.map((p) => ({
         id: p._id.toString(),
         title: p.title,
         image_url: p.image_url,
-        price: parseFloat(p.price),
+        price: parseFloat(p.price) || 0,
         total_sold: p.total_sold || 0,
       })),
     });
+  })
+);
+
+// GET /analytics/category-revenue - Thống kê doanh thu theo danh mục (Admin)
+router.get(
+  "/category-revenue",
+  authentication(),
+  authorizeByRoles([ROLES.ADMIN]),
+  handle(async (req, res) => {
+    // Tính doanh thu theo danh mục từ order items
+    const categoryRevenueResult = await OrderItemModel.aggregate([
+      {
+        $lookup: {
+          from: "orders",
+          localField: "order_id",
+          foreignField: "_id",
+          as: "order",
+        },
+      },
+      {
+        $unwind: "$order",
+      },
+      {
+        $match: {
+          "order.status": { $in: ["paid", "delivered", "shipped"] },
+        },
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "product_id",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      {
+        $unwind: {
+          path: "$product",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          "product.category_id": { $exists: true, $ne: null },
+        },
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "product.category_id",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+      {
+        $unwind: {
+          path: "$category",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $group: {
+          _id: "$product.category_id",
+          category_name: { $first: "$category.name" },
+          revenue: { $sum: { $multiply: ["$qty", "$unit_price"] } },
+        },
+      },
+      {
+        $sort: { revenue: -1 },
+      },
+    ]);
+
+    // Format kết quả
+    const result = categoryRevenueResult.map((item) => ({
+      name: item.category_name || "Không xác định",
+      revenue: parseFloat(item.revenue || 0),
+    }));
+
+    // Nếu không có dữ liệu, trả về mảng rỗng
+    if (result.length === 0) {
+      return res.json([]);
+    }
+
+    res.json(result);
   })
 );
 

@@ -57,18 +57,22 @@ reviewSchema.index({ rating: 1 });
 
 // Middleware để tự động cập nhật rating của product
 reviewSchema.post("save", async function () {
-  await this.constructor.updateProductRating(this.product_id);
+  const ReviewModel = this.constructor;
+  await ReviewModel.updateProductRating(this.product_id);
 });
 
 reviewSchema.post("findOneAndUpdate", async function (doc) {
-  if (doc) {
-    await doc.constructor.updateProductRating(doc.product_id);
+  if (doc && doc.product_id) {
+    // Lấy ReviewModel từ mongoose model registry
+    const ReviewModel = mongoose.model("Review");
+    await ReviewModel.updateProductRating(doc.product_id);
   }
 });
 
 reviewSchema.post("findOneAndDelete", async function (doc) {
-  if (doc) {
-    await doc.constructor.updateProductRating(doc.product_id);
+  if (doc && doc.product_id) {
+    const ReviewModel = mongoose.model("Review");
+    await ReviewModel.updateProductRating(doc.product_id);
   }
 });
 

@@ -6,13 +6,33 @@ export const ProductController = {
   list: handle(async (req, res) => {
     // Lấy các tham số lọc từ query string
     const filters = {
-      category_id: req.query.category_id || null, // MongoDB ObjectId là string
+      category_id: req.query.category_id || null,
+      store_id: req.query.store_id || null,
+      search: req.query.search || null,
+      
+      // Price filters
       min_price: req.query.min_price ? parseFloat(req.query.min_price) : null,
       max_price: req.query.max_price ? parseFloat(req.query.max_price) : null,
-      store_id: req.query.store_id || null, // MongoDB ObjectId là string
-      search: req.query.search || null,
+      min_final_price: req.query.min_final_price ? parseFloat(req.query.min_final_price) : null,
+      max_final_price: req.query.max_final_price ? parseFloat(req.query.max_final_price) : null,
+      
+      // Rating filter
       min_rating: req.query.min_rating ? parseFloat(req.query.min_rating) : null,
+      
+      // Stock filters
+      in_stock_only: req.query.in_stock_only || null,
+      min_stock: req.query.min_stock ? parseInt(req.query.min_stock) : null,
+      
+      // Discount filters
+      has_discount: req.query.has_discount || null,
+      min_discount: req.query.min_discount ? parseFloat(req.query.min_discount) : null,
+      
+      // Sorting
       sort: req.query.sort || null,
+      
+      // Pagination
+      limit: req.query.limit ? parseInt(req.query.limit) : null,
+      offset: req.query.offset ? parseInt(req.query.offset) : null,
     };
 
     // Loại bỏ các giá trị null
@@ -124,6 +144,42 @@ export const ProductController = {
         width: req.file.width,
         height: req.file.height,
       },
+    });
+  }),
+
+  // Upload nhiều hình ảnh cho sản phẩm
+  uploadMultipleImages: handle(async (req, res) => {
+    const userId = req.currentUser?.id;
+    if (!req.files || req.files.length === 0) {
+      logger.warn('PRODUCT', 'Upload thất bại - không có file', { userId });
+      return res.status(400).json({
+        message: "Vui lòng chọn ít nhất một file hình ảnh để upload",
+      });
+    }
+
+    // Xử lý nhiều file
+    const imageUrls = req.files.map((file) => ({
+      image_url: file.path, // Cloudinary URL
+      public_id: file.filename, // Cloudinary public_id
+      file_info: {
+        original_filename: file.originalname,
+        size: file.size,
+        format: file.format,
+        width: file.width,
+        height: file.height,
+      },
+    }));
+
+    logger.info('PRODUCT', 'Upload nhiều hình ảnh thành công', { 
+      userId, 
+      count: imageUrls.length,
+      publicIds: imageUrls.map(img => img.public_id)
+    });
+
+    res.json({
+      message: `Upload ${imageUrls.length} hình ảnh thành công`,
+      image_urls: imageUrls.map(img => img.image_url), // Array of URLs
+      images: imageUrls, // Full info for each image
     });
   }),
 };

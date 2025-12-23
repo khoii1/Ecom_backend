@@ -54,18 +54,23 @@ router.get(
   authorizeByRoles([ROLES.ADMIN]),
   handle(async (req, res) => {
     const stores = await StoreModel.find({})
-      .populate('owner_id', 'full_name email')
+      .populate("owner_id", "full_name email phone")
       .sort({ createdAt: -1 })
       .lean();
 
     const formattedStores = stores.map((store) => ({
       ...store,
       id: store._id.toString(),
-      owner_id: store.owner_id?._id.toString() || store.owner_id.toString(),
+      owner_id:
+        store.owner_id?._id?.toString() ||
+        (typeof store.owner_id === "object"
+          ? store.owner_id.toString()
+          : store.owner_id),
       owner_name: store.owner_id?.full_name || null,
       owner_email: store.owner_id?.email || null,
+      owner_phone: store.owner_id?.phone || null,
     }));
-    
+
     res.json(formattedStores);
   })
 );

@@ -1,4 +1,6 @@
 import { UserService } from "../services/user.service.js";
+import { UserModel } from "../models/user.model.js";
+import { comparePassword, hashPassword } from "../utils/crypto.js";
 import { handle } from "./base.controller.js";
 import { logger } from "../utils/logger.js";
 
@@ -93,6 +95,38 @@ export const UserController = {
       res.json(userProfile);
     } catch (e) {
       logger.error('USER', 'Cập nhật profile thất bại', { error: e.message, userId });
+      throw e;
+    }
+  }),
+
+  changePassword: handle(async (req, res) => {
+    const userId = req.currentUser.id;
+    const { currentPassword, newPassword } = req.body;
+    logger.info('USER', 'Yêu cầu đổi mật khẩu', { userId });
+
+    try {
+      // Lấy user với password_hash
+      const user = await UserModel.findById(userId);
+      if (!user) {
+        logger.warn('USER', 'Đổi mật khẩu thất bại - user không tồn tại', { userId });
+        return res.status(404).json({ message: "Người dùng không tồn tại" });
+      }
+
+      // Kiểm tra mật khẩu hiện tại
+      const isPasswordCorrect = await comparePassword(currentPassword, user.password_hash);
+      if (!isPasswordCorrect) {
+        logger.warn('USER', 'Đổi mật khẩu thất bại - mật khẩu hiện tại sai', { userId });
+        return res.status(400).json({ message: "Mật khẩu hiện tại không đúng" });
+      }
+
+      // Hash mật khẩu mới và cập nhật
+      const newPasswordHash = await hashPassword(newPassword);
+      await UserModel.findByIdAndUpdate(userId, { password_hash: newPasswordHash });
+
+      logger.info('USER', 'Đổi mật khẩu thành công', { userId });
+      res.json({ message: "Đổi mật khẩu thành công" });
+    } catch (e) {
+      logger.error('USER', 'Đổi mật khẩu thất bại', { error: e.message, userId });
       throw e;
     }
   }),

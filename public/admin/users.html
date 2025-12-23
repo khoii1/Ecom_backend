@@ -45,6 +45,11 @@
             </a>
           </li>
           <li class="nav-item">
+            <a href="stores.html" class="nav-link">
+              <i class="fas fa-store"></i> Cửa hàng
+            </a>
+          </li>
+          <li class="nav-item">
             <a href="banners.html" class="nav-link">
               <i class="fas fa-images"></i> Banners
             </a>
@@ -57,6 +62,26 @@
           <li class="nav-item">
             <a href="orders.html" class="nav-link">
               <i class="fas fa-shopping-cart"></i> Đơn hàng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="returns.html" class="nav-link">
+              <i class="fas fa-undo"></i> Trả hàng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="reviews.html" class="nav-link">
+              <i class="fas fa-star"></i> Đánh giá
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="wallet.html" class="nav-link">
+              <i class="fas fa-wallet"></i> Ví điện tử
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="shipping.html" class="nav-link">
+              <i class="fas fa-shipping-fast"></i> Vận chuyển
             </a>
           </li>
           <li class="nav-item">
@@ -126,78 +151,305 @@
       <div class="modal-content">
         <div class="modal-header">
           <h3 class="modal-title" id="userModalTitle">Thêm người dùng</h3>
-          <button class="close-modal" onclick="closeUserModal()">
+          <button
+            class="close-modal"
+            onclick="closeUserModal()"
+            aria-label="Đóng"
+          >
             &times;
           </button>
         </div>
 
-        <form id="userForm">
-          <input type="hidden" id="userId" />
+        <div
+          class="modal-body"
+          style="padding: 2rem 2.5rem; background: #fafbfc"
+        >
+          <form id="userForm">
+            <input type="hidden" id="userId" />
 
-          <div class="form-group">
-            <label class="form-label" for="fullName">Họ tên</label>
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              class="form-control"
-              required
-            />
-          </div>
+            <div class="form-group" style="margin-bottom: 1.5rem">
+              <label
+                class="form-label"
+                for="fullName"
+                style="
+                  display: flex;
+                  align-items: center;
+                  margin-bottom: 0.5rem;
+                  font-weight: 600;
+                  color: #2c3e50;
+                  font-size: 14px;
+                "
+              >
+                <i
+                  class="fas fa-user"
+                  style="margin-right: 8px; color: #3498db; font-size: 16px"
+                ></i>
+                Họ tên
+                <span class="required" style="color: #e74c3c; margin-left: 4px"
+                  >*</span
+                >
+              </label>
+              <input
+                type="text"
+                id="fullName"
+                name="fullName"
+                class="form-control"
+                required
+                placeholder="Nhập họ tên"
+                style="
+                  font-size: 15px;
+                  padding: 12px 16px;
+                  border: 2px solid #e0e6ed;
+                  border-radius: 8px;
+                  transition: all 0.3s;
+                  background: white;
+                "
+                onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+              />
+            </div>
 
-          <div class="form-group">
-            <label class="form-label" for="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              class="form-control"
-              required
-            />
-          </div>
+            <div class="form-group" style="margin-bottom: 1.5rem">
+              <label
+                class="form-label"
+                for="email"
+                style="
+                  display: flex;
+                  align-items: center;
+                  margin-bottom: 0.5rem;
+                  font-weight: 600;
+                  color: #2c3e50;
+                  font-size: 14px;
+                "
+              >
+                <i
+                  class="fas fa-envelope"
+                  style="margin-right: 8px; color: #3498db; font-size: 16px"
+                ></i>
+                Email
+                <span class="required" style="color: #e74c3c; margin-left: 4px"
+                  >*</span
+                >
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                class="form-control"
+                required
+                placeholder="Nhập email"
+                style="
+                  font-size: 15px;
+                  padding: 12px 16px;
+                  border: 2px solid #e0e6ed;
+                  border-radius: 8px;
+                  transition: all 0.3s;
+                  background: white;
+                "
+                onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+              />
+            </div>
 
-          <div class="form-group" id="passwordGroup">
-            <label class="form-label" for="password">Mật khẩu</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              class="form-control"
-            />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="role">Vai trò</label>
-            <select id="role" name="role" class="form-select" required>
-              <option value="USER">Người dùng</option>
-              <option value="SELLER">Người bán</option>
-              <option value="ADMIN">Quản trị viên</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="status">Trạng thái</label>
-            <select id="status" name="status" class="form-select" required>
-              <option value="active">Hoạt động</option>
-              <option value="pending">Chờ xác minh</option>
-              <option value="inactive">Không hoạt động</option>
-            </select>
-          </div>
-
-          <div style="display: flex; gap: 1rem; margin-top: 2rem">
-            <button type="submit" class="btn btn-primary" style="flex: 1">
-              <i class="fas fa-save"></i> Lưu
-            </button>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              style="flex: 1"
-              onclick="closeUserModal()"
+            <div
+              class="form-group"
+              id="passwordGroup"
+              style="margin-bottom: 1.5rem"
             >
-              <i class="fas fa-times"></i> Hủy
-            </button>
-          </div>
-        </form>
+              <label
+                class="form-label"
+                for="password"
+                style="
+                  display: flex;
+                  align-items: center;
+                  margin-bottom: 0.5rem;
+                  font-weight: 600;
+                  color: #2c3e50;
+                  font-size: 14px;
+                "
+              >
+                <i
+                  class="fas fa-lock"
+                  style="margin-right: 8px; color: #3498db; font-size: 16px"
+                ></i>
+                Mật khẩu
+                <span class="required" style="color: #e74c3c; margin-left: 4px"
+                  >*</span
+                >
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                class="form-control"
+                placeholder="Nhập mật khẩu"
+                style="
+                  font-size: 15px;
+                  padding: 12px 16px;
+                  border: 2px solid #e0e6ed;
+                  border-radius: 8px;
+                  transition: all 0.3s;
+                  background: white;
+                "
+                onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+              />
+            </div>
+
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1.25rem;
+                margin-bottom: 1.5rem;
+              "
+            >
+              <div class="form-group">
+                <label
+                  class="form-label"
+                  for="role"
+                  style="
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 0.5rem;
+                    font-weight: 600;
+                    color: #2c3e50;
+                    font-size: 14px;
+                  "
+                >
+                  <i
+                    class="fas fa-user-tag"
+                    style="margin-right: 8px; color: #3498db; font-size: 16px"
+                  ></i>
+                  Vai trò
+                  <span
+                    class="required"
+                    style="color: #e74c3c; margin-left: 4px"
+                    >*</span
+                  >
+                </label>
+                <select
+                  id="role"
+                  name="role"
+                  class="form-select"
+                  required
+                  title="Chọn vai trò"
+                  aria-label="Chọn vai trò"
+                  style="
+                    font-size: 15px;
+                    padding: 12px 16px;
+                    border: 2px solid #e0e6ed;
+                    border-radius: 8px;
+                    transition: all 0.3s;
+                    background: white;
+                    cursor: pointer;
+                  "
+                  onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                  onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+                >
+                  <option value="USER">Người dùng</option>
+                  <option value="SELLER">Người bán</option>
+                  <option value="ADMIN">Quản trị viên</option>
+                  <option value="SHIPPER">Người giao hàng</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label
+                  class="form-label"
+                  for="status"
+                  style="
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 0.5rem;
+                    font-weight: 600;
+                    color: #2c3e50;
+                    font-size: 14px;
+                  "
+                >
+                  <i
+                    class="fas fa-toggle-on"
+                    style="margin-right: 8px; color: #3498db; font-size: 16px"
+                  ></i>
+                  Trạng thái
+                  <span
+                    class="required"
+                    style="color: #e74c3c; margin-left: 4px"
+                    >*</span
+                  >
+                </label>
+                <select
+                  id="status"
+                  name="status"
+                  class="form-select"
+                  required
+                  title="Chọn trạng thái"
+                  aria-label="Chọn trạng thái"
+                  style="
+                    font-size: 15px;
+                    padding: 12px 16px;
+                    border: 2px solid #e0e6ed;
+                    border-radius: 8px;
+                    transition: all 0.3s;
+                    background: white;
+                    cursor: pointer;
+                  "
+                  onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                  onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
+                >
+                  <option value="active">Hoạt động</option>
+                  <option value="pending">Chờ xác minh</option>
+                  <option value="inactive">Không hoạt động</option>
+                </select>
+              </div>
+            </div>
+
+            <div
+              class="form-actions"
+              style="
+                display: flex;
+                gap: 1rem;
+                margin-top: 2rem;
+                padding-top: 1.5rem;
+                border-top: 2px solid #ecf0f1;
+              "
+            >
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="closeUserModal()"
+                style="
+                  flex: 1;
+                  padding: 14px;
+                  font-size: 15px;
+                  font-weight: 600;
+                  border-radius: 8px;
+                  transition: all 0.3s;
+                "
+                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)';"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+              >
+                <i class="fas fa-times"></i> Hủy
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary"
+                style="
+                  flex: 1;
+                  padding: 14px;
+                  font-size: 15px;
+                  font-weight: 600;
+                  border-radius: 8px;
+                  transition: all 0.3s;
+                "
+                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(52, 152, 219, 0.3)';"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+              >
+                <i class="fas fa-save"></i> Lưu
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
 

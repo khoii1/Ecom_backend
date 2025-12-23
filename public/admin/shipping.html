@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản lý Vận chuyển - Ecommerce Admin</title>
+    <link rel="stylesheet" href="css/admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="header">
+      <h1><i class="fas fa-shipping-fast"></i> Ecommerce Admin</h1>
+      <div class="user-info">
+        <span id="adminName"><i class="fas fa-user"></i> Admin</span>
+        <button class="logout-btn" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </button>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="sidebar">
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="index.html" class="nav-link">
+              <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="users.html" class="nav-link">
+              <i class="fas fa-users"></i> Người dùng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="categories.html" class="nav-link">
+              <i class="fas fa-tags"></i> Danh mục
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="products.html" class="nav-link">
+              <i class="fas fa-box"></i> Sản phẩm
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="stores.html" class="nav-link">
+              <i class="fas fa-store"></i> Cửa hàng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="banners.html" class="nav-link">
+              <i class="fas fa-images"></i> Banners
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="discounts.html" class="nav-link">
+              <i class="fas fa-percent"></i> Mã giảm giá
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="orders.html" class="nav-link">
+              <i class="fas fa-shopping-cart"></i> Đơn hàng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="returns.html" class="nav-link">
+              <i class="fas fa-undo"></i> Trả hàng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="reviews.html" class="nav-link">
+              <i class="fas fa-star"></i> Đánh giá
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="wallet.html" class="nav-link">
+              <i class="fas fa-wallet"></i> Ví điện tử
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="shipping.html" class="nav-link active">
+              <i class="fas fa-shipping-fast"></i> Vận chuyển
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="analytics.html" class="nav-link">
+              <i class="fas fa-chart-line"></i> Thống kê
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="main-content">
+        <div class="content-header">
+          <h2>Quản lý Phương thức Vận chuyển</h2>
+          <div class="breadcrumb">
+            <i class="fas fa-home"></i> Trang chủ / Vận chuyển
+          </div>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <div class="table-container">
+          <div class="table-header">
+            <div class="table-title">
+              <i class="fas fa-shipping-fast"></i> Danh sách Phương thức Vận
+              chuyển
+            </div>
+            <div class="table-actions">
+              <button class="btn btn-primary" onclick="openAddShippingModal()">
+                <i class="fas fa-plus"></i> Thêm phương thức
+              </button>
+              <button class="btn btn-success" onclick="loadShippingMethods()">
+                <i class="fas fa-refresh"></i> Làm mới
+              </button>
+            </div>
+          </div>
+
+          <div class="loading" id="shippingLoading">
+            <div class="spinner"></div>
+            <p>Đang tải dữ liệu...</p>
+          </div>
+
+          <table class="data-table" id="shippingTable" style="display: none">
+            <thead>
+              <tr>
+                <th>Mã</th>
+                <th>Tên</th>
+                <th>Mô tả</th>
+                <th>Chi phí cơ bản</th>
+                <th>Chi phí/km</th>
+                <th>Chi phí/kg</th>
+                <th>Thời gian giao hàng</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="shippingTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shipping Method Modal -->
+    <div id="shippingModal" class="modal" style="display: none">
+      <div class="modal-content" style="max-width: 900px">
+        <div class="modal-header">
+          <h3 class="modal-title" id="shippingModalTitle">
+            Thêm phương thức vận chuyển
+          </h3>
+          <button
+            class="close-modal"
+            onclick="closeShippingModal()"
+            aria-label="Đóng"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div
+          class="modal-body"
+          style="padding: 2rem 2.5rem; background: #fafbfc"
+        >
+          <form id="shippingForm">
+            <input type="hidden" id="shippingId" />
+
+            <div class="form-group">
+              <label class="form-label" for="shippingCode"
+                >Mã phương thức
+                <span style="color: var(--danger-color)">*</span></label
+              >
+              <input
+                type="text"
+                id="shippingCode"
+                class="form-control"
+                required
+                placeholder="VD: standard, express"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="shippingName"
+                >Tên phương thức
+                <span style="color: var(--danger-color)">*</span></label
+              >
+              <input
+                type="text"
+                id="shippingName"
+                class="form-control"
+                required
+                placeholder="VD: Giao hàng tiêu chuẩn"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="shippingDescription">Mô tả</label>
+              <textarea
+                id="shippingDescription"
+                class="form-control"
+                rows="3"
+                placeholder="Mô tả về phương thức vận chuyển"
+              ></textarea>
+            </div>
+
+            <div
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem"
+            >
+              <div class="form-group">
+                <label class="form-label" for="shippingBaseCost"
+                  >Chi phí cơ bản (VNĐ)
+                  <span style="color: var(--danger-color)">*</span></label
+                >
+                <input
+                  type="number"
+                  id="shippingBaseCost"
+                  class="form-control"
+                  required
+                  min="0"
+                  step="1000"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="shippingCostPerKm"
+                  >Chi phí/km (VNĐ)</label
+                >
+                <input
+                  type="number"
+                  id="shippingCostPerKm"
+                  class="form-control"
+                  min="0"
+                  step="100"
+                />
+              </div>
+            </div>
+
+            <div
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem"
+            >
+              <div class="form-group">
+                <label class="form-label" for="shippingCostPerKg"
+                  >Chi phí/kg (VNĐ)</label
+                >
+                <input
+                  type="number"
+                  id="shippingCostPerKg"
+                  class="form-control"
+                  min="0"
+                  step="100"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="shippingDeliveryTime"
+                  >Thời gian giao hàng (ngày)</label
+                >
+                <input
+                  type="number"
+                  id="shippingDeliveryTime"
+                  class="form-control"
+                  min="1"
+                  step="1"
+                  placeholder="VD: 3"
+                />
+              </div>
+            </div>
+
+            <div
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem"
+            >
+              <div class="form-group">
+                <label class="form-label" for="shippingMinWeight"
+                  >Khối lượng tối thiểu (kg)</label
+                >
+                <input
+                  type="number"
+                  id="shippingMinWeight"
+                  class="form-control"
+                  min="0"
+                  step="0.1"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="shippingMaxWeight"
+                  >Khối lượng tối đa (kg)</label
+                >
+                <input
+                  type="number"
+                  id="shippingMaxWeight"
+                  class="form-control"
+                  min="0"
+                  step="0.1"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="shippingMaxDistance"
+                >Khoảng cách tối đa (km)</label
+              >
+              <input
+                type="number"
+                id="shippingMaxDistance"
+                class="form-control"
+                min="0"
+                step="1"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="shippingIsActive"
+                >Trạng thái</label
+              >
+              <select id="shippingIsActive" class="form-select">
+                <option value="true">Hoạt động</option>
+                <option value="false">Không hoạt động</option>
+              </select>
+            </div>
+          </form>
+        </div>
+        <div
+          class="modal-footer"
+          style="
+            padding: 2rem 2.5rem;
+            border-top: 2px solid #ecf0f1;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            background: var(--light-bg);
+          "
+        >
+          <button
+            onclick="closeShippingModal()"
+            class="btn btn-secondary"
+            style="
+              padding: 14px 28px;
+              font-size: 15px;
+              font-weight: 600;
+              border-radius: 8px;
+              transition: all 0.3s;
+            "
+            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)';"
+            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+          >
+            <i class="fas fa-times"></i> Hủy
+          </button>
+          <button
+            onclick="saveShippingMethod()"
+            class="btn btn-primary"
+            style="
+              padding: 14px 28px;
+              font-size: 15px;
+              font-weight: 600;
+              border-radius: 8px;
+              transition: all 0.3s;
+            "
+            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(52, 152, 219, 0.3)';"
+            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+          >
+            <i class="fas fa-save"></i> Lưu
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/common.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/shipping.js"></script>
+  </body>
+</html>

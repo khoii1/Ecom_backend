@@ -2,10 +2,12 @@ import { Router } from "express";
 import { body, param } from "express-validator";
 import { ReviewModel } from "../models/review.model.js";
 import { authentication } from "../middleware/authentication.js";
+import { authorizeByRoles } from "../middleware/authorization.js";
 import { validate } from "../middleware/validation.js";
 import { handle } from "../controllers/base.controller.js";
 import { ProductModel } from "../models/product.model.js";
-import { uploadMultiple } from "../middleware/upload.js";
+import { uploadMultiple, validateReviewImages } from "../middleware/upload.js";
+import { ROLES } from "../constants/roles.js";
 
 const router = Router();
 
@@ -30,6 +32,78 @@ const reviewValidation = [
 const productIdValidation = [
   param("productId").isMongoId().withMessage("ID sản phẩm không hợp lệ"),
 ];
+
+// GET /reviews - Admin xem tất cả reviews trong hệ thống
+router.get(
+  "/",
+  authentication(),
+  authorizeByRoles([ROLES.ADMIN]),
+  handle(async (req, res) => {
+    const { limit = 50, offset = 0, rating, product_id } = req.query;
+
+    const query = {};
+
+    if (rating) {
+      query.rating = parseInt(rating);
+    }
+
+    if (product_id) {
+      query.product_id = product_id;
+    }
+
+    const reviews = await ReviewModel.find(query)
+      .populate("user_id", "full_name email")
+      .populate("product_id", "title image_url store_id")
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(offset))
+      .lean();
+
+    const total = await ReviewModel.countDocuments(query);
+
+    // Populate store info cho products
+    const { StoreModel } = await import("../models/store.model.js");
+    const productIds = [
+      ...new Set(
+        reviews
+          .map((r) => r.product_id?._id?.toString() || r.product_id?.toString())
+          .filter(Boolean)
+      ),
+    ];
+    const products =
+      productIds.length > 0
+        ? await ProductModel.find({ _id: { $in: productIds } })
+            .populate("store_id", "name")
+            .lean()
+        : [];
+
+    const productMap = new Map();
+    products.forEach((product) => {
+      productMap.set(product._id.toString(), product);
+    });
+
+    res.json({
+      reviews: reviews.map((r) => ({
+        ...r,
+        id: r._id.toString(),
+        product_id: r.product_id?._id.toString() || r.product_id?.toString(),
+        product_title: r.product_id?.title || null,
+        product_image_url: r.product_id?.image_url || null,
+        store_name:
+          productMap.get(r.product_id?._id?.toString())?.store_id?.name || null,
+        user_id: r.user_id?._id.toString() || r.user_id?.toString(),
+        user_name: r.user_id?.full_name || null,
+        user_email: r.user_id?.email || null,
+        order_id: r.order_id?.toString() || r.order_id?.toString(),
+        created_at: r.createdAt ? r.createdAt.toISOString() : null,
+        updated_at: r.updatedAt ? r.updatedAt.toISOString() : null,
+      })),
+      total,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
+  })
+);
 
 // GET /reviews/product/:productId - Lấy tất cả reviews của sản phẩm
 router.get(
@@ -56,7 +130,9 @@ router.get(
         user_name: r.user_id?.full_name || null,
         image_urls: r.image_urls || [],
         seller_response: r.seller_response || null,
-        seller_response_at: r.seller_response_at ? r.seller_response_at.toISOString() : null,
+        seller_response_at: r.seller_response_at
+          ? r.seller_response_at.toISOString()
+          : null,
         created_at: r.createdAt ? r.createdAt.toISOString() : null,
         updated_at: r.updatedAt ? r.updatedAt.toISOString() : null,
       })),
@@ -69,6 +145,64 @@ router.get(
         two_star: stats.two_star || 0,
         one_star: stats.one_star || 0,
       },
+    });
+  })
+);
+
+// GET /reviews/product/:productId/available-orders - Lấy danh sách đơn hàng có thể đánh giá
+router.get(
+  "/product/:productId/available-orders",
+  authentication(),
+  productIdValidation,
+  validate,
+  handle(async (req, res) => {
+    const productId = req.params.productId;
+    const userId = req.currentUser.id;
+
+    const { OrderModel } = await import("../models/order.model.js");
+    const { OrderItemModel } = await import("../models/order_item.model.js");
+
+    // Lấy tất cả đơn hàng đã thanh toán của user
+    const allowedStatuses = ["paid", "processing", "shipped", "delivered"];
+    const orders = await OrderModel.find({
+      buyer_id: userId,
+      status: { $in: allowedStatuses },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Lọc các đơn hàng có chứa sản phẩm này
+    const availableOrders = [];
+    for (const order of orders) {
+      // Kiểm tra order có chứa sản phẩm này
+      const orderItem = await OrderItemModel.findOne({
+        order_id: order._id,
+        product_id: productId,
+      }).lean();
+
+      if (!orderItem) continue;
+
+      // Kiểm tra đã đánh giá chưa
+      const existingReview = await ReviewModel.findOne({
+        order_id: order._id,
+        product_id: productId,
+      }).lean();
+
+      // Chỉ thêm vào danh sách nếu chưa đánh giá
+      if (!existingReview) {
+        availableOrders.push({
+          id: order._id.toString(),
+          code: order.code,
+          total: order.total,
+          status: order.status,
+          created_at: order.createdAt ? order.createdAt.toISOString() : null,
+        });
+      }
+    }
+
+    res.json({
+      orders: availableOrders,
+      total: availableOrders.length,
     });
   })
 );
@@ -102,22 +236,18 @@ router.post(
     }).lean();
 
     if (!order) {
-      return res
-        .status(404)
-        .json({
-          message: "Không tìm thấy đơn hàng hoặc đơn hàng không thuộc về bạn",
-        });
+      return res.status(404).json({
+        message: "Không tìm thấy đơn hàng hoặc đơn hàng không thuộc về bạn",
+      });
     }
 
     // Kiểm tra order đã hoàn thành (delivered hoặc paid/processing trở lên)
     const allowedStatuses = ["paid", "processing", "shipped", "delivered"];
     if (!allowedStatuses.includes(order.status)) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Chỉ có thể đánh giá sản phẩm sau khi đơn hàng đã được thanh toán",
-        });
+      return res.status(400).json({
+        message:
+          "Chỉ có thể đánh giá sản phẩm sau khi đơn hàng đã được thanh toán",
+      });
     }
 
     // Kiểm tra order có chứa sản phẩm này không
@@ -239,8 +369,12 @@ router.put(
       id: updatedReview._id.toString(),
       product_id: updatedReview.product_id.toString(),
       user_id: updatedReview.user_id.toString(),
-      created_at: updatedReview.createdAt ? updatedReview.createdAt.toISOString() : null,
-      updated_at: updatedReview.updatedAt ? updatedReview.updatedAt.toISOString() : null,
+      created_at: updatedReview.createdAt
+        ? updatedReview.createdAt.toISOString()
+        : null,
+      updated_at: updatedReview.updatedAt
+        ? updatedReview.updatedAt.toISOString()
+        : null,
     });
   })
 );
@@ -310,13 +444,8 @@ router.post(
   "/upload-images",
   authentication(),
   uploadMultiple("images", 5, true), // Cho phép tối đa 5 ảnh, dùng folder review
+  validateReviewImages, // Validate sau khi upload
   handle(async (req, res) => {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({
-        message: "Vui lòng chọn ít nhất một ảnh để upload",
-      });
-    }
-
     // Cloudinary tự động trả về secure_url sau khi upload
     const imageUrls = req.files.map((file) => file.path); // Array các Cloudinary URL
 
@@ -368,7 +497,7 @@ router.put(
     if (userRole === "SELLER") {
       const { StoreModel } = await import("../models/store.model.js");
       const product = existingReview.product_id;
-      
+
       if (!product || !product.store_id) {
         return res
           .status(400)
@@ -384,6 +513,7 @@ router.put(
     }
 
     // Cập nhật phản hồi
+    // Không cần update product rating khi chỉ update seller_response
     const updatedReview = await ReviewModel.findByIdAndUpdate(
       reviewId,
       {
@@ -392,7 +522,12 @@ router.put(
           seller_response_at: new Date(),
         },
       },
-      { new: true, runValidators: true }
+      {
+        new: true,
+        runValidators: true,
+        // Không chạy post hook vì seller_response không ảnh hưởng đến rating
+        // Post hook sẽ tự động chạy nhưng không cần thiết ở đây
+      }
     )
       .populate("user_id", "full_name email")
       .lean();
@@ -401,15 +536,22 @@ router.put(
       ...updatedReview,
       id: updatedReview._id.toString(),
       product_id: updatedReview.product_id.toString(),
-      user_id: updatedReview.user_id?._id.toString() || updatedReview.user_id.toString(),
-      order_id: updatedReview.order_id?.toString() || updatedReview.order_id.toString(),
+      user_id:
+        updatedReview.user_id?._id.toString() ||
+        updatedReview.user_id.toString(),
+      order_id:
+        updatedReview.order_id?.toString() || updatedReview.order_id.toString(),
       user_name: updatedReview.user_id?.full_name || null,
       seller_response: updatedReview.seller_response,
       seller_response_at: updatedReview.seller_response_at
         ? updatedReview.seller_response_at.toISOString()
         : null,
-      created_at: updatedReview.createdAt ? updatedReview.createdAt.toISOString() : null,
-      updated_at: updatedReview.updatedAt ? updatedReview.updatedAt.toISOString() : null,
+      created_at: updatedReview.createdAt
+        ? updatedReview.createdAt.toISOString()
+        : null,
+      updated_at: updatedReview.updatedAt
+        ? updatedReview.updatedAt.toISOString()
+        : null,
     });
   })
 );

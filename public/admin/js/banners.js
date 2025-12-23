@@ -344,8 +344,8 @@ function setupBannerForm() {
         const uploadFormData = new FormData();
         uploadFormData.append("image", imageFile);
 
-        // Sử dụng endpoint upload của products (hoặc tạo endpoint riêng cho banner)
-        const uploadResponse = await apiCall("/products/upload-image", {
+        // Sử dụng endpoint upload riêng cho banner
+        const uploadResponse = await apiCall("/banners/upload-image", {
           method: "POST",
           body: uploadFormData,
           isFormData: true,

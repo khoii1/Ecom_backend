@@ -178,11 +178,9 @@ router.post(
     }
 
     if (order.status !== "processing") {
-      return res
-        .status(400)
-        .json({
-          message: "Đơn hàng phải ở trạng thái 'processing' để nhận hàng",
-        });
+      return res.status(400).json({
+        message: "Đơn hàng phải ở trạng thái 'processing' để nhận hàng",
+      });
     }
 
     await OrderModel.findByIdAndUpdate(orderId, {
@@ -237,7 +235,9 @@ router.post(
     const deliveryProofImage = req.file.path; // Cloudinary URL
 
     // Import OrderTrackingModel
-    const { OrderTrackingModel } = await import("../models/order_tracking.model.js");
+    const { OrderTrackingModel } = await import(
+      "../models/order_tracking.model.js"
+    );
     const { OrderItemModel } = await import("../models/order_item.model.js");
     const { ProductModel } = await import("../models/product.model.js");
 
@@ -253,7 +253,9 @@ router.post(
         paymentMethod: order.payment_method,
       });
 
-      const orderItems = await OrderItemModel.find({ order_id: orderId }).lean();
+      const orderItems = await OrderItemModel.find({
+        order_id: orderId,
+      }).lean();
       for (const item of orderItems) {
         // Lấy thông tin product hiện tại để kiểm tra reserved_quantity
         const product = await ProductModel.findById(item.product_id).lean();
@@ -294,9 +296,13 @@ router.post(
         location: null,
         note: null,
       });
-      logger.info("SHIPPER", "Đã tạo tracking entry cho 'paid' (cash payment)", {
-        orderId,
-      });
+      logger.info(
+        "SHIPPER",
+        "Đã tạo tracking entry cho 'paid' (cash payment)",
+        {
+          orderId,
+        }
+      );
     }
 
     // Cập nhật order với status = "delivered" (cho cả cash và VNPay)
@@ -311,6 +317,76 @@ router.post(
       },
       { new: true }
     ).lean();
+
+    // Cộng tiền vào ví seller khi giao hàng thành công (cho cả VNPay và cash)
+    // Logic giống thực tế: seller chỉ nhận tiền khi đơn hàng đã được giao thành công
+    try {
+      const { StoreModel } = await import("../models/store.model.js");
+      const { WalletService } = await import("../services/wallet.service.js");
+      const { WalletTransactionModel } = await import(
+        "../models/wallet_transaction.model.js"
+      );
+
+      const store = await StoreModel.findById(order.store_id).lean();
+      if (store && store.owner_id) {
+        const sellerId = store.owner_id.toString();
+
+        // Kiểm tra xem đã có transaction cho order này chưa (tránh cộng 2 lần)
+        const existingTransaction = await WalletTransactionModel.findOne({
+          user_id: sellerId,
+          reference_id: orderId.toString(),
+          reference_type: "order",
+          type: "payment",
+          status: "completed",
+        }).lean();
+
+        if (!existingTransaction) {
+          // Tính tiền seller nhận được
+          const platformFeeRate = parseFloat(process.env.PLATFORM_FEE_RATE || "0");
+          const platformFee = (order.total * platformFeeRate) / 100;
+          const sellerAmount = order.total - platformFee;
+
+          // Kiểm tra nếu là exchange order (total = 0) thì không cộng tiền
+          if (order.payment_method !== "exchange" && order.total > 0) {
+            await WalletService.add(
+              sellerId,
+              sellerAmount,
+              orderId.toString(),
+              "order",
+              `Thanh toán đơn hàng ${order.code || orderId} (giao hàng thành công): ${sellerAmount.toLocaleString(
+                "vi-VN"
+              )} VNĐ${platformFee > 0 ? ` (đã trừ phí platform: ${platformFee.toLocaleString("vi-VN")} VNĐ)` : ""}`
+            );
+
+            logger.info("SHIPPER", `Đã cộng tiền vào ví seller khi giao hàng thành công`, {
+              orderId,
+              sellerId,
+              sellerAmount,
+              platformFee,
+              orderTotal: order.total,
+              paymentMethod: order.payment_method,
+            });
+          } else {
+            logger.info("SHIPPER", `Bỏ qua cộng tiền cho exchange order (total = 0)`, {
+              orderId,
+              paymentMethod: order.payment_method,
+            });
+          }
+        } else {
+          logger.info("SHIPPER", `Đã cộng tiền vào ví seller trước đó`, {
+            orderId,
+            sellerId,
+            existingTransactionId: existingTransaction._id.toString(),
+          });
+        }
+      }
+    } catch (walletError) {
+      // Log lỗi nhưng không fail delivery
+      logger.error("SHIPPER", `Lỗi khi cộng tiền vào ví seller khi giao hàng`, {
+        orderId,
+        error: walletError.message,
+      });
+    }
 
     // Tạo notification cho customer
     await NotificationModel.create({
@@ -359,10 +435,18 @@ router.get(
     }
 
     // Kiểm tra shipper có quyền xem đơn này không
-    if (
-      order.shipper_id?.toString() !== shipperId.toString() &&
-      req.currentUser.role !== ROLES.ADMIN
-    ) {
+    // Shipper có thể xem nếu:
+    // 1. Đơn hàng đã được gán cho shipper đó
+    // 2. Đơn hàng là available (chưa có shipper, status paid/processing) - để shipper có thể xem trước khi nhận
+    // 3. User là ADMIN
+    const isAssignedToShipper =
+      order.shipper_id?.toString() === shipperId.toString();
+    const isAvailableOrder =
+      !order.shipper_id &&
+      (order.status === "paid" || order.status === "processing");
+    const isAdmin = req.currentUser.role === ROLES.ADMIN;
+
+    if (!isAssignedToShipper && !isAvailableOrder && !isAdmin) {
       return res
         .status(403)
         .json({ message: "Bạn không có quyền xem đơn hàng này" });

@@ -37,7 +37,7 @@ const formatProductsForFrontend = (products) => {
 };
 
 export const ProductService = {
-  // Lấy tất cả products với final_price và hỗ trợ lọc
+  // Lấy tất cả products với final_price và hỗ trợ lọc nâng cao
   list: async (filters = {}) => {
     const query = { status: 'active' };
     
@@ -46,7 +46,20 @@ export const ProductService = {
       query.category_id = filters.category_id;
     }
     
-    // Lọc theo giá
+    // Lọc theo store
+    if (filters.store_id) {
+      query.store_id = filters.store_id;
+    }
+    
+    // Advanced search - tìm kiếm trong title, description
+    if (filters.search) {
+      query.$or = [
+        { title: { $regex: filters.search, $options: 'i' } },
+        { description: { $regex: filters.search, $options: 'i' } },
+      ];
+    }
+    
+    // Lọc theo giá gốc (price)
     if (filters.min_price || filters.max_price) {
       query.price = {};
       if (filters.min_price) {
@@ -57,34 +70,110 @@ export const ProductService = {
       }
     }
     
-    // Lọc theo store
-    if (filters.store_id) {
-      query.store_id = filters.store_id;
-    }
-    
-    // Tìm kiếm theo tên
-    if (filters.search) {
-      query.title = { $regex: filters.search, $options: 'i' };
-    }
+    // Lọc theo giá sau giảm (final_price) - tính toán qua aggregation
+    const needsFinalPriceFilter = filters.min_final_price || filters.max_final_price;
     
     // Lọc theo rating
     if (filters.min_rating) {
       query.rating = { $gte: parseFloat(filters.min_rating) };
     }
     
+    // Lọc theo stock quantity
+    if (filters.in_stock_only === 'true' || filters.in_stock_only === true) {
+      query.$expr = { $gt: [{ $subtract: ['$stock_quantity', '$reserved_quantity'] }, 0] };
+    } else if (filters.min_stock !== undefined) {
+      query.$expr = {
+        $gte: [
+          { $subtract: ['$stock_quantity', '$reserved_quantity'] },
+          parseInt(filters.min_stock)
+        ]
+      };
+    }
+    
+    // Lọc theo discount
+    if (filters.has_discount === 'true' || filters.has_discount === true) {
+      query.discount_percentage = { $gt: 0 };
+    } else if (filters.min_discount !== undefined) {
+      query.discount_percentage = { $gte: parseFloat(filters.min_discount) };
+    }
+    
     // Sắp xếp
     const sortOptions = {
       'price_asc': { price: 1 },
       'price_desc': { price: -1 },
+      'final_price_asc': { price: 1, discount_percentage: -1 }, // Ưu tiên discount
+      'final_price_desc': { price: -1, discount_percentage: -1 },
       'rating_desc': { rating: -1 },
+      'rating_asc': { rating: 1 },
       'newest': { createdAt: -1 },
+      'oldest': { createdAt: 1 },
       'name_asc': { title: 1 },
+      'name_desc': { title: -1 },
+      'discount_desc': { discount_percentage: -1 },
+      'stock_desc': { stock_quantity: -1 },
     };
     const sort = sortOptions[filters.sort] || { createdAt: -1 };
     
-    const products = await ProductModel.find(query)
-      .sort(sort)
-      .lean();
+    let products;
+    
+    // Nếu cần lọc theo final_price, dùng aggregation
+    if (needsFinalPriceFilter) {
+      const pipeline = [
+        { $match: query },
+        {
+          $addFields: {
+            final_price: {
+              $cond: {
+                if: { $and: [{ $ne: ['$discount_percentage', null] }, { $gt: ['$discount_percentage', 0] }] },
+                then: {
+                  $subtract: [
+                    '$price',
+                    { $divide: [{ $multiply: ['$price', '$discount_percentage'] }, 100] }
+                  ]
+                },
+                else: '$price'
+              }
+            }
+          }
+        }
+      ];
+      
+      // Thêm filter final_price vào pipeline
+      if (filters.min_final_price || filters.max_final_price) {
+        const finalPriceFilter = {};
+        if (filters.min_final_price) {
+          finalPriceFilter.$gte = parseFloat(filters.min_final_price);
+        }
+        if (filters.max_final_price) {
+          finalPriceFilter.$lte = parseFloat(filters.max_final_price);
+        }
+        pipeline.push({ $match: { final_price: finalPriceFilter } });
+      }
+      
+      // Thêm sort và limit
+      pipeline.push({ $sort: sort });
+      
+      if (filters.limit) {
+        pipeline.push({ $limit: parseInt(filters.limit) });
+      }
+      if (filters.offset) {
+        pipeline.push({ $skip: parseInt(filters.offset) });
+      }
+      
+      products = await ProductModel.aggregate(pipeline);
+    } else {
+      // Không cần final_price filter, dùng find bình thường
+      let queryBuilder = ProductModel.find(query);
+      
+      if (filters.limit) {
+        queryBuilder = queryBuilder.limit(parseInt(filters.limit));
+      }
+      if (filters.offset) {
+        queryBuilder = queryBuilder.skip(parseInt(filters.offset));
+      }
+      
+      products = await queryBuilder.sort(sort).lean();
+    }
     
     return formatProductsForFrontend(products);
   },

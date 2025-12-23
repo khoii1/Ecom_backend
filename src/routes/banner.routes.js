@@ -2,6 +2,7 @@ import express from 'express';
 import { BannerController } from '../controllers/banner.controller.js';
 import { authentication } from '../middleware/authentication.js';
 import { authorizeByRoles } from '../middleware/authorization.js';
+import { uploadBanner } from '../middleware/upload.js';
 import { ROLES } from '../constants/roles.js';
 
 const router = express.Router();
@@ -13,6 +14,15 @@ router.get('/:bannerId', BannerController.detail);
 router.post('/:bannerId/click', BannerController.click); // Public để track clicks
 
 // Admin only routes
+// Upload banner image endpoint
+router.post(
+  '/upload-image',
+  authentication(),
+  authorizeByRoles([ROLES.ADMIN]),
+  uploadBanner('image'),
+  BannerController.uploadImage
+);
+
 router.post(
   '/',
   authentication(),

@@ -45,6 +45,11 @@
             </a>
           </li>
           <li class="nav-item">
+            <a href="stores.html" class="nav-link">
+              <i class="fas fa-store"></i> Cửa hàng
+            </a>
+          </li>
+          <li class="nav-item">
             <a href="banners.html" class="nav-link">
               <i class="fas fa-images"></i> Banners
             </a>
@@ -57,6 +62,26 @@
           <li class="nav-item">
             <a href="orders.html" class="nav-link">
               <i class="fas fa-shopping-cart"></i> Đơn hàng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="returns.html" class="nav-link">
+              <i class="fas fa-undo"></i> Trả hàng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="reviews.html" class="nav-link">
+              <i class="fas fa-star"></i> Đánh giá
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="wallet.html" class="nav-link">
+              <i class="fas fa-wallet"></i> Ví điện tử
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="shipping.html" class="nav-link">
+              <i class="fas fa-shipping-fast"></i> Vận chuyển
             </a>
           </li>
           <li class="nav-item">
@@ -123,74 +148,235 @@
       <div class="modal-content">
         <div class="modal-header">
           <h3 class="modal-title" id="categoryModalTitle">Thêm danh mục</h3>
-          <button class="close-modal" onclick="closeCategoryModal()">
+          <button
+            class="close-modal"
+            onclick="closeCategoryModal()"
+            aria-label="Đóng"
+          >
             &times;
           </button>
         </div>
 
-        <form id="categoryForm">
-          <input type="hidden" id="categoryId" />
+        <div
+          class="modal-body"
+          style="padding: 2rem 2.5rem; background: #fafbfc"
+        >
+          <form id="categoryForm">
+            <input type="hidden" id="categoryId" />
 
-          <div class="form-group">
-            <label class="form-label" for="categoryName">Tên danh mục</label>
-            <input
-              type="text"
-              id="categoryName"
-              name="name"
-              class="form-control"
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Ảnh danh mục</label>
-            <div class="image-upload-container">
-              <div class="image-preview" id="categoryImagePreview">
-                <i class="fas fa-image"></i>
-                <span>Chọn ảnh</span>
-              </div>
+            <div class="form-group" style="margin-bottom: 1.5rem">
+              <label
+                class="form-label"
+                for="categoryName"
+                style="
+                  display: flex;
+                  align-items: center;
+                  margin-bottom: 0.5rem;
+                  font-weight: 600;
+                  color: #2c3e50;
+                  font-size: 14px;
+                "
+              >
+                <i
+                  class="fas fa-tag"
+                  style="margin-right: 8px; color: #3498db; font-size: 16px"
+                ></i>
+                Tên danh mục
+                <span class="required" style="color: #e74c3c; margin-left: 4px"
+                  >*</span
+                >
+              </label>
               <input
-                type="file"
-                id="categoryImageFile"
-                accept="image/*"
-                style="display: none"
+                type="text"
+                id="categoryName"
+                name="name"
+                class="form-control"
+                required
+                placeholder="Nhập tên danh mục"
+                style="
+                  font-size: 15px;
+                  padding: 12px 16px;
+                  border: 2px solid #e0e6ed;
+                  border-radius: 8px;
+                  transition: all 0.3s;
+                  background: white;
+                "
+                onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)';"
+                onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none';"
               />
-              <input type="hidden" id="categoryImageUrl" name="image_url" />
-              <div class="image-upload-buttons">
-                <button
-                  type="button"
-                  class="btn btn-secondary btn-sm"
-                  onclick="selectCategoryImage()"
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.5rem">
+              <label
+                class="form-label"
+                for="categoryImageFile"
+                style="
+                  display: flex;
+                  align-items: center;
+                  margin-bottom: 0.5rem;
+                  font-weight: 600;
+                  color: #2c3e50;
+                  font-size: 14px;
+                "
+              >
+                <i
+                  class="fas fa-image"
+                  style="margin-right: 8px; color: #3498db; font-size: 16px"
+                ></i>
+                Ảnh danh mục
+              </label>
+              <div
+                class="image-upload-container"
+                style="
+                  border: 2px dashed #d0d7de;
+                  border-radius: 12px;
+                  padding: 1.5rem;
+                  background: #f8fafc;
+                  transition: all 0.3s;
+                "
+              >
+                <div
+                  class="image-preview"
+                  id="categoryImagePreview"
+                  style="
+                    width: 180px;
+                    height: 180px;
+                    margin: 0 auto 1rem;
+                    border-radius: 12px;
+                    border: 2px solid #e9ecef;
+                    background: #ffffff;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+                    cursor: pointer;
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                  "
                 >
-                  <i class="fas fa-upload"></i> Chọn file
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-danger btn-sm"
-                  onclick="removeCategoryImage()"
+                  <i
+                    class="fas fa-cloud-upload-alt"
+                    style="
+                      font-size: 3rem;
+                      color: #95a5a6;
+                      margin-bottom: 0.5rem;
+                    "
+                  ></i>
+                  <span
+                    style="color: #6c757d; font-size: 14px; font-weight: 500"
+                    >Chọn hoặc kéo thả ảnh</span
+                  >
+                </div>
+                <input
+                  type="file"
+                  id="categoryImageFile"
+                  accept="image/*"
                   style="display: none"
-                  id="removeCategoryImageBtn"
+                  aria-label="Chọn ảnh danh mục"
+                  title="Chọn ảnh danh mục"
+                />
+                <input type="hidden" id="categoryImageUrl" name="image_url" />
+                <div
+                  class="image-upload-buttons"
+                  style="display: flex; gap: 0.75rem; justify-content: center"
                 >
-                  <i class="fas fa-trash"></i> Xóa
-                </button>
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    onclick="selectCategoryImage()"
+                    style="
+                      padding: 10px 20px;
+                      font-size: 14px;
+                      border-radius: 8px;
+                      font-weight: 500;
+                      transition: all 0.3s;
+                    "
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)';"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+                  >
+                    <i class="fas fa-upload"></i> Chọn file
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-danger btn-sm"
+                    onclick="removeCategoryImage()"
+                    style="
+                      display: none;
+                      padding: 10px 20px;
+                      font-size: 14px;
+                      border-radius: 8px;
+                      font-weight: 500;
+                      transition: all 0.3s;
+                    "
+                    id="removeCategoryImageBtn"
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(220,53,69,0.3)';"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+                  >
+                    <i class="fas fa-trash"></i> Xóa
+                  </button>
+                </div>
+                <small
+                  style="
+                    color: #6c757d;
+                    margin-top: 12px;
+                    display: block;
+                    text-align: center;
+                    font-size: 13px;
+                  "
+                >
+                  <i class="fas fa-info-circle" style="margin-right: 4px"></i>
+                  Chọn ảnh từ máy tính của bạn (JPG, PNG, GIF hoặc WebP, tối đa
+                  5MB)
+                </small>
               </div>
             </div>
-          </div>
 
-          <div style="display: flex; gap: 1rem; margin-top: 2rem">
-            <button type="submit" class="btn btn-primary" style="flex: 1">
-              <i class="fas fa-save"></i> Lưu
-            </button>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              style="flex: 1"
-              onclick="closeCategoryModal()"
+            <div
+              class="form-actions"
+              style="
+                display: flex;
+                gap: 1rem;
+                margin-top: 2rem;
+                padding-top: 1.5rem;
+                border-top: 2px solid #ecf0f1;
+              "
             >
-              <i class="fas fa-times"></i> Hủy
-            </button>
-          </div>
-        </form>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="closeCategoryModal()"
+                style="
+                  flex: 1;
+                  padding: 14px;
+                  font-size: 15px;
+                  font-weight: 600;
+                  border-radius: 8px;
+                  transition: all 0.3s;
+                "
+                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)';"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+              >
+                <i class="fas fa-times"></i> Hủy
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary"
+                style="
+                  flex: 1;
+                  padding: 14px;
+                  font-size: 15px;
+                  font-weight: 600;
+                  border-radius: 8px;
+                  transition: all 0.3s;
+                "
+                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(52, 152, 219, 0.3)';"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';"
+              >
+                <i class="fas fa-save"></i> Lưu
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
 

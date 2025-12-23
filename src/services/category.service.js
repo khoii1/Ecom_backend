@@ -10,6 +10,8 @@ const formatCategoryForFrontend = (category) => {
     parent_id: category.parent_id
       ? category.parent_id.toString()
       : category.parent_id,
+    created_at: category.createdAt ? category.createdAt.toISOString() : null,
+    updated_at: category.updatedAt ? category.updatedAt.toISOString() : null,
   };
 };
 

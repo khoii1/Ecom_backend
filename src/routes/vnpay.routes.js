@@ -27,7 +27,9 @@ const createTopupUrl = handle(async (req, res) => {
   }
 
   // Kiểm tra transaction có tồn tại và thuộc về user này không
-  const { WalletTransactionModel } = await import("../models/wallet_transaction.model.js");
+  const { WalletTransactionModel } = await import(
+    "../models/wallet_transaction.model.js"
+  );
   const transaction = await WalletTransactionModel.findOne({
     _id: transactionId,
     user_id: userId,
@@ -36,11 +38,15 @@ const createTopupUrl = handle(async (req, res) => {
   }).lean();
 
   if (!transaction) {
-    return res.status(404).json({ message: "Giao dịch nạp tiền không tồn tại hoặc đã được xử lý" });
+    return res
+      .status(404)
+      .json({ message: "Giao dịch nạp tiền không tồn tại hoặc đã được xử lý" });
   }
 
   if (transaction.amount !== amount) {
-    return res.status(400).json({ message: "Số tiền không khớp với giao dịch" });
+    return res
+      .status(400)
+      .json({ message: "Số tiền không khớp với giao dịch" });
   }
 
   // --- Lấy thông tin cấu hình từ .env ---
@@ -235,25 +241,29 @@ const vnpayIpn = handle(async (req, res) => {
     return res.json({ RspCode: "01", Message: "Missing parameters" });
   }
 
-      logger.info("VNPAY", `Xử lý IPN`, {
-        orderId: orderIdStr,
-        vnp_TxnRef: vnp_Params["vnp_TxnRef"],
-        responseCode: vnpResponseCode,
-        orderInfo: vnp_Params["vnp_OrderInfo"],
-      });
+  logger.info("VNPAY", `Xử lý IPN`, {
+    orderId: orderIdStr,
+    vnp_TxnRef: vnp_Params["vnp_TxnRef"],
+    responseCode: vnpResponseCode,
+    orderInfo: vnp_Params["vnp_OrderInfo"],
+  });
 
   if (secureHash === signed) {
     logger.info("VNPAY", `IPN Checksum OK`, { orderId: orderIdStr });
     try {
       // Phân biệt loại giao dịch: order payment hoặc wallet topup
       const orderInfo = vnp_Params["vnp_OrderInfo"] || "";
-      const isTopup = orderInfo.toLowerCase().includes("nap tien") || orderInfo.toLowerCase().includes("topup");
-      
+      const isTopup =
+        orderInfo.toLowerCase().includes("nap tien") ||
+        orderInfo.toLowerCase().includes("topup");
+
       if (isTopup) {
         // Xử lý nạp tiền vào ví
         const { WalletService } = await import("../services/wallet.service.js");
-        const { WalletTransactionModel } = await import("../models/wallet_transaction.model.js");
-        
+        const { WalletTransactionModel } = await import(
+          "../models/wallet_transaction.model.js"
+        );
+
         // Tìm transaction topup bằng vnp_TxnRef
         const vnpTxnRef = vnp_Params["vnp_TxnRef"];
         const transaction = await WalletTransactionModel.findOne({
@@ -261,44 +271,63 @@ const vnpayIpn = handle(async (req, res) => {
           type: "topup",
           status: "pending",
         }).lean();
-        
+
         if (!transaction) {
           // Thử tìm bằng _id nếu vnp_TxnRef chứa transactionId
           const transactionIdFromRef = vnpTxnRef.split("_")[0];
-          const transactionById = await WalletTransactionModel.findById(transactionIdFromRef).lean();
-          
-          if (!transactionById || transactionById.type !== "topup" || transactionById.status !== "pending") {
-            logger.error("VNPAY", `IPN Error: Giao dịch nạp tiền không tồn tại`, { vnpTxnRef });
-            return res.json({ RspCode: "01", Message: "Topup transaction not found" });
+          const transactionById = await WalletTransactionModel.findById(
+            transactionIdFromRef
+          ).lean();
+
+          if (
+            !transactionById ||
+            transactionById.type !== "topup" ||
+            transactionById.status !== "pending"
+          ) {
+            logger.error(
+              "VNPAY",
+              `IPN Error: Giao dịch nạp tiền không tồn tại`,
+              { vnpTxnRef }
+            );
+            return res.json({
+              RspCode: "01",
+              Message: "Topup transaction not found",
+            });
           }
-          
+
           // Cập nhật trạng thái nạp tiền
           await WalletService.updateTopupStatus(
             transactionById._id.toString(),
             vnpResponseCode,
             vnpTxnRef
           );
-          
-          logger.info("VNPAY", `IPN Topup xử lý thành công`, { transactionId: transactionById._id.toString() });
+
+          logger.info("VNPAY", `IPN Topup xử lý thành công`, {
+            transactionId: transactionById._id.toString(),
+          });
           return res.json({ RspCode: "00", Message: "Confirm Success" });
         }
-        
+
         // Cập nhật trạng thái nạp tiền
         await WalletService.updateTopupStatus(
           transaction._id.toString(),
           vnpResponseCode,
           vnpTxnRef
         );
-        
-        logger.info("VNPAY", `IPN Topup xử lý thành công`, { transactionId: transaction._id.toString() });
+
+        logger.info("VNPAY", `IPN Topup xử lý thành công`, {
+          transactionId: transaction._id.toString(),
+        });
         return res.json({ RspCode: "00", Message: "Confirm Success" });
       }
-      
+
       // Xử lý thanh toán đơn hàng (logic cũ)
       // 1. Kiểm tra đơn hàng trong DB
       const order = await OrderModel.findById(orderIdStr).lean();
       if (!order) {
-        logger.error("VNPAY", `IPN Error: Đơn hàng không tồn tại`, { orderId: orderIdStr });
+        logger.error("VNPAY", `IPN Error: Đơn hàng không tồn tại`, {
+          orderId: orderIdStr,
+        });
         return res.json({ RspCode: "01", Message: "Order not found" }); // Mã VNPay: Order không tồn tại
       }
 
@@ -307,7 +336,7 @@ const vnpayIpn = handle(async (req, res) => {
       if (isNaN(orderTotal)) {
         // Kiểm tra xem order.total có hợp lệ không
         logger.error("VNPAY", `IPN DB Error: Tổng tiền không hợp lệ trong DB`, {
-          orderId,
+          orderId: orderIdStr,
         });
         return res.json({
           RspCode: "99",
@@ -316,7 +345,7 @@ const vnpayIpn = handle(async (req, res) => {
       }
       if (orderTotal !== vnpAmount) {
         logger.error("VNPAY", `IPN Error: Số tiền không khớp`, {
-          orderId,
+          orderId: orderIdStr,
           dbAmount: orderTotal,
           vnpAmount,
         });
@@ -326,7 +355,7 @@ const vnpayIpn = handle(async (req, res) => {
       // 3. Kiểm tra trạng thái đơn hàng (tránh cập nhật lại đơn đã hoàn thành/hủy)
       if (order.status !== "pending" && order.status !== "payment_failed") {
         logger.info("VNPAY", `IPN Info: Đơn hàng đã được xử lý`, {
-          orderId,
+          orderId: orderIdStr,
           status: order.status,
         });
         // Nếu đã paid, trả về thành công cho VNPay
@@ -347,7 +376,7 @@ const vnpayIpn = handle(async (req, res) => {
       if (vnpResponseCode === "00" && vnpTransactionStatus === "00") {
         newStatus = "paid";
         logger.info("VNPAY", `IPN Success: Cập nhật đơn hàng thành 'paid'`, {
-          orderId,
+          orderId: orderIdStr,
         });
       } else {
         newStatus = "payment_failed";
@@ -355,18 +384,19 @@ const vnpayIpn = handle(async (req, res) => {
           "VNPAY",
           `IPN Failed: Cập nhật đơn hàng thành 'payment_failed'`,
           {
-            orderId,
+            orderId: orderIdStr,
             responseCode: vnpResponseCode,
             transactionStatus: vnpTransactionStatus,
           }
         );
       }
 
-      await OrderModel.findByIdAndUpdate(orderId, {
+      await OrderModel.findByIdAndUpdate(orderIdStr, {
         $set: { status: newStatus },
       });
 
       // 5. Nếu thanh toán thành công ('paid'), giảm stock từ reserved và xóa giỏ hàng
+      // KHÔNG cộng tiền vào ví seller ở đây - sẽ cộng khi đơn hàng được giao thành công (delivered)
       if (newStatus === "paid") {
         const { OrderItemModel } = await import(
           "../models/order_item.model.js"
@@ -375,25 +405,34 @@ const vnpayIpn = handle(async (req, res) => {
 
         // Lấy order items và giảm stock từ reserved
         const orderItems = await OrderItemModel.find({
-          order_id: orderId,
+          order_id: orderIdStr,
         }).lean();
         for (const item of orderItems) {
-          // Giảm stock_quantity và giảm reserved_quantity
-          await ProductModel.findByIdAndUpdate(item.product_id, {
+          // Lấy thông tin product hiện tại để kiểm tra reserved_quantity
+          const product = await ProductModel.findById(item.product_id).lean();
+
+          // Luôn giảm stock_quantity (stock thực tế)
+          const updateData = {
             $inc: {
               stock_quantity: -item.qty,
-              reserved_quantity: -item.qty,
             },
-          });
+          };
+
+          // Chỉ giảm reserved_quantity nếu nó > 0 (còn reservation)
+          if (product && product.reserved_quantity > 0) {
+            updateData.$inc.reserved_quantity = -item.qty;
+          }
+
+          await ProductModel.findByIdAndUpdate(item.product_id, updateData);
         }
         logger.info("VNPAY", `Đã giảm stock sau thanh toán thành công`, {
-          orderId,
+          orderId: orderIdStr,
         });
 
         // Xóa giỏ hàng
         logger.info("VNPAY", `Xóa giỏ hàng sau thanh toán thành công`, {
           userId: order.buyer_id,
-          orderId,
+          orderId: orderIdStr,
         });
         const cart = await CartModel.findOne({
           user_id: order.buyer_id,
@@ -409,17 +448,17 @@ const vnpayIpn = handle(async (req, res) => {
       }
 
       // 6. Phản hồi thành công cho VNPay
-      logger.info("VNPAY", `IPN xử lý thành công`, { orderId, newStatus });
+      logger.info("VNPAY", `IPN xử lý thành công`, { orderId: orderIdStr, newStatus });
       res.json({ RspCode: "00", Message: "Confirm Success" });
     } catch (dbError) {
       logger.error("VNPAY", `IPN DB Error`, {
-        orderId,
+        orderId: orderIdStr,
         error: dbError.message,
       });
       res.json({ RspCode: "99", Message: "Unknown error" }); // Lỗi hệ thống khi tương tác DB
     }
   } else {
-    logger.error("VNPAY", `IPN Checksum FAILED`, { orderId });
+    logger.error("VNPAY", `IPN Checksum FAILED`, { orderId: orderIdStr });
     res.json({ RspCode: "97", Message: "Invalid Checksum" }); // Sai chữ ký
   }
 });

@@ -2,15 +2,15 @@ import { Router } from "express";
 import { body, param, query } from "express-validator";
 import { WalletController } from "../controllers/wallet.controller.js";
 import { authentication } from "../middleware/authentication.js";
+import { authorizeByRoles } from "../middleware/authorization.js";
 import { validate } from "../middleware/validation.js";
+import { ROLES } from "../constants/roles.js";
 
 const router = Router();
 
 // Validation middleware
 const transactionIdValidation = [
-  param("transactionId")
-    .isMongoId()
-    .withMessage("ID giao dịch không hợp lệ"),
+  param("transactionId").isMongoId().withMessage("ID giao dịch không hợp lệ"),
   validate,
 ];
 
@@ -49,6 +49,15 @@ const transactionsQueryValidation = [
 // Tất cả routes đều cần authentication
 router.use(authentication());
 
+// Admin routes
+// GET /wallet/admin/all-transactions - Admin xem tất cả giao dịch
+router.get(
+  "/admin/all-transactions",
+  authorizeByRoles([ROLES.ADMIN]),
+  transactionsQueryValidation,
+  WalletController.getAllTransactionsForAdmin
+);
+
 // GET /wallet/balance - Xem số dư ví
 router.get("/balance", WalletController.getBalance);
 
@@ -69,5 +78,11 @@ router.get(
   WalletController.getTransactionDetail
 );
 
-export default router;
+// DELETE /wallet/transactions/:transactionId - Hủy giao dịch pending
+router.delete(
+  "/transactions/:transactionId",
+  transactionIdValidation,
+  WalletController.cancelTransaction
+);
 
+export default router;

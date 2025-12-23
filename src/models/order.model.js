@@ -57,6 +57,16 @@ const orderSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    shipping_fee: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    shipping_code: {
+      type: String,
+      default: null,
+      trim: true,
+    },
     shipping_address: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Address",

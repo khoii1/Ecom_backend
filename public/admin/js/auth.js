@@ -150,17 +150,20 @@ async function apiCall(endpoint, options = {}) {
   }
 
   // Nếu là FormData, không set Content-Type (browser sẽ tự set với boundary)
-  const headers = options.isFormData
-    ? { ...(token && { Authorization: `Bearer ${token}` }), ...options.headers }
-    : {
-        "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-        ...options.headers,
-      };
+  const defaultHeaders = options.isFormData
+    ? {}
+    : { "Content-Type": "application/json" };
+  
+  // Merge headers: default headers trước, sau đó options.headers, cuối cùng là Authorization để đảm bảo không bị ghi đè
+  const headers = {
+    ...defaultHeaders,
+    ...(options.headers || {}),
+    ...(token && { Authorization: `Bearer ${token}` }), // Authorization luôn được set cuối cùng để không bị ghi đè
+  };
 
   const config = {
-    headers,
     ...options,
+    headers,
   };
 
   // Xóa isFormData khỏi config để không gửi lên server
@@ -189,6 +192,14 @@ async function apiCall(endpoint, options = {}) {
 
     return response;
   } catch (error) {
+    // Xử lý lỗi network (không kết nối được server, CORS, timeout, etc.)
+    console.error('Network error:', error);
+    if (!window.location.pathname.includes("login.html")) {
+      showAlert(
+        `Lỗi kết nối: ${error.message || "Không thể kết nối đến server"}`,
+        "error"
+      );
+    }
     throw error;
   }
 }
@@ -229,9 +240,23 @@ function formatCurrency(amount) {
   }).format(amount);
 }
 
-// Format ngày tháng
+// Format ngày tháng (only date, no time)
 function formatDate(dateString) {
-  return new Date(dateString).toLocaleString("vi-VN");
+  if (!dateString) return "-";
+  
+  const date = new Date(dateString);
+  
+  // Check if date is valid
+  if (isNaN(date.getTime())) {
+    return "-";
+  }
+  
+  // Format manually to ensure only date (dd/mm/yyyy)
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  
+  return `${day}/${month}/${year}`;
 }
 
 // Truncate text

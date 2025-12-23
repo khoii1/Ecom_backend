@@ -9,6 +9,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   </head>
   <body>
     <div class="header">
@@ -45,6 +46,11 @@
             </a>
           </li>
           <li class="nav-item">
+            <a href="stores.html" class="nav-link">
+              <i class="fas fa-store"></i> Cửa hàng
+            </a>
+          </li>
+          <li class="nav-item">
             <a href="banners.html" class="nav-link">
               <i class="fas fa-images"></i> Banners
             </a>
@@ -57,6 +63,26 @@
           <li class="nav-item">
             <a href="orders.html" class="nav-link">
               <i class="fas fa-shopping-cart"></i> Đơn hàng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="returns.html" class="nav-link">
+              <i class="fas fa-undo"></i> Trả hàng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="reviews.html" class="nav-link">
+              <i class="fas fa-star"></i> Đánh giá
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="wallet.html" class="nav-link">
+              <i class="fas fa-wallet"></i> Ví điện tử
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="shipping.html" class="nav-link">
+              <i class="fas fa-shipping-fast"></i> Vận chuyển
             </a>
           </li>
           <li class="nav-item">
@@ -77,99 +103,154 @@
 
         <div id="alert-container"></div>
 
+        <!-- Time Filter -->
+        <div style="background: white; padding: 1rem 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <label for="timeFilter" style="font-weight: 500; color: #64748b;"><i class="fas fa-calendar"></i> Thời gian:</label>
+            <select id="timeFilter" class="form-select" style="width: auto;" aria-label="Chọn khoảng thời gian">
+              <option value="today">Hôm nay</option>
+              <option value="7days">7 ngày qua</option>
+              <option value="30days">30 ngày qua</option>
+              <option value="thisMonth">Tháng này</option>
+              <option value="lastMonth">Tháng trước</option>
+              <option value="all" selected>Tất cả thời gian</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="refreshDashboard()">
+            <i class="fas fa-sync-alt"></i> Làm mới
+          </button>
+        </div>
+
         <div class="stats-grid">
           <div class="stat-card stat-users">
-            <div class="stat-number" id="totalUsers">-</div>
             <div class="stat-label">
               <i class="fas fa-users"></i> Tổng người dùng
             </div>
+            <div class="stat-number" id="totalUsers">-</div>
+            <div class="stat-change" id="usersChange"></div>
           </div>
 
           <div class="stat-card stat-products">
-            <div class="stat-number" id="totalProducts">-</div>
             <div class="stat-label">
               <i class="fas fa-box"></i> Tổng sản phẩm
             </div>
+            <div class="stat-number" id="totalProducts">-</div>
+            <div class="stat-change" id="productsChange"></div>
           </div>
 
           <div class="stat-card stat-categories">
-            <div class="stat-number" id="totalCategories">-</div>
             <div class="stat-label">
               <i class="fas fa-tags"></i> Tổng danh mục
             </div>
+            <div class="stat-number" id="totalCategories">-</div>
+            <div class="stat-change" id="categoriesChange"></div>
           </div>
 
           <div class="stat-card stat-stores">
-            <div class="stat-number" id="totalStores">-</div>
             <div class="stat-label">
               <i class="fas fa-store"></i> Tổng cửa hàng
             </div>
+            <div class="stat-number" id="totalStores">-</div>
+            <div class="stat-change" id="storesChange"></div>
           </div>
 
-          <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white;">
-            <div class="stat-number" id="totalBanners">-</div>
+          <div class="stat-card stat-banners">
             <div class="stat-label">
               <i class="fas fa-images"></i> Tổng Banners
             </div>
+            <div class="stat-number" id="totalBanners">-</div>
+            <div class="stat-change" id="bannersChange"></div>
           </div>
         </div>
 
-        <div class="stats-grid" style="margin-top: 20px;">
-          <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-            <div class="stat-number" id="totalRevenue">-</div>
+        <div class="stats-grid" style="margin-top: 1.5rem;">
+          <div class="stat-card stat-revenue">
             <div class="stat-label">
               <i class="fas fa-money-bill-wave"></i> Tổng doanh thu
             </div>
+            <div class="stat-number" id="totalRevenue">-</div>
+            <div class="stat-change" id="revenueChange"></div>
           </div>
 
-          <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
-            <div class="stat-number" id="totalOrders">-</div>
+          <div class="stat-card stat-orders">
             <div class="stat-label">
               <i class="fas fa-shopping-cart"></i> Tổng đơn hàng
             </div>
+            <div class="stat-number" id="totalOrders">-</div>
+            <div class="stat-change" id="ordersChange"></div>
           </div>
         </div>
 
-        <div class="table-container">
-        <div class="table-header">
-          <div class="table-title">
-            <i class="fas fa-store"></i> Quản lý Cửa hàng
+        <!-- Revenue Chart -->
+        <div style="background: white; padding: 1.5rem; border-radius: 8px; margin-top: 1.5rem; border: 1px solid #e2e8f0;">
+          <h3 style="margin: 0 0 1.5rem 0; color: #1e293b; font-size: 1.125rem;">
+            <i class="fas fa-chart-line"></i> Biểu đồ doanh thu
+          </h3>
+          <canvas id="revenueChart" style="max-height: 400px;"></canvas>
+        </div>
+
+        <!-- Recent Orders Table -->
+        <div class="table-container" style="margin-top: 1.5rem;">
+          <div class="table-header">
+            <div class="table-title">
+              <i class="fas fa-shopping-cart"></i> Đơn hàng mới nhất
+            </div>
+            <a href="orders.html" class="btn btn-sm btn-primary">Xem tất cả</a>
           </div>
+
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Mã đơn</th>
+                <th>Khách hàng</th>
+                <th>Tổng tiền</th>
+                <th>Trạng thái</th>
+                <th>Ngày tạo</th>
+              </tr>
+            </thead>
+            <tbody id="recentOrdersBody">
+              <tr>
+                <td colspan="5" style="text-align: center; padding: 2rem; color: #64748b;">
+                  <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                  Đang tải dữ liệu...
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        <div class="loading" id="storesLoading">
-          <div class="spinner"></div>
-          <p>Đang tải dữ liệu...</p>
-        </div>
+        <div class="table-container" style="margin-top: 1.5rem;">
+          <div class="table-header">
+            <div class="table-title">
+              <i class="fas fa-store"></i> Quản lý Cửa hàng
+            </div>
+          </div>
 
-        <table class="data-table" id="storesTable" style="display: none">
-          <thead>
-            <tr>
-              <th>Tên cửa hàng</th>
-              <th>Chủ sở hữu</th>
-              <th>Email chủ sở hữu</th>
-              <th>Trạng thái</th>
-              <th>Ngày tạo</th>
-            </tr>
-          </thead>
-          <tbody id="storesTableBody"></tbody>
-        </table>
+          <div class="loading" id="storesLoading">
+            <div class="spinner"></div>
+            <p>Đang tải dữ liệu...</p>
+          </div>
+
+          <table class="data-table" id="storesTable" style="display: none">
+            <thead>
+              <tr>
+                <th>Tên cửa hàng</th>
+                <th>Chủ sở hữu</th>
+                <th>Email chủ sở hữu</th>
+                <th>Trạng thái</th>
+                <th>Ngày tạo</th>
+              </tr>
+            </thead>
+            <tbody id="storesTableBody"></tbody>
+          </table>
+        </div>
       </div>
-</table>
-
-<table class="data-table" id="ordersTable" style="display: none">
-  <thead>
-    <tr>
-      <th>Mã ĐH</th> <th>Khách hàng</th> <th>Tổng tiền</th> <th>Trạng thái</th> <th>Ngày đặt</th> </tr>
-  </thead>
-  <tbody id="ordersTableBody"></tbody>
-</table>
-        </div>
+    </div>
       </div>
     </div>
 
     <script src="js/common.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/dashboard.js"></script>
+    <script src="js/dashboard.js?v=12"></script>
   </body>
 </html>

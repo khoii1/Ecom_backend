@@ -13,9 +13,16 @@ const formatWalletForFrontend = (wallet) => {
 
 const formatTransactionForFrontend = (transaction) => {
   if (!transaction) return transaction;
+
+  // Generate transaction code from ID
+  const transactionCode = transaction._id
+    ? `WT${transaction._id.toString().substring(0, 8).toUpperCase()}`
+    : "N/A";
+
   return {
     ...transaction,
     id: transaction._id.toString(),
+    transaction_code: transactionCode,
     wallet_id: transaction.wallet_id?.toString() || transaction.wallet_id,
     user_id: transaction.user_id?.toString() || transaction.user_id,
   };
@@ -41,7 +48,10 @@ export const WalletService = {
         status: "active",
       });
       wallet = wallet.toObject();
-      logger.info("WALLET", "Tự động tạo ví mới", { userId, walletId: wallet._id.toString() });
+      logger.info("WALLET", "Tự động tạo ví mới", {
+        userId,
+        walletId: wallet._id.toString(),
+      });
     }
 
     return formatWalletForFrontend(wallet);
@@ -90,7 +100,8 @@ export const WalletService = {
       amount: amount,
       status: "pending",
       reference_type: "topup",
-      description: description || `Nạp tiền vào ví: ${amount.toLocaleString("vi-VN")} VNĐ`,
+      description:
+        description || `Nạp tiền vào ví: ${amount.toLocaleString("vi-VN")} VNĐ`,
     });
 
     logger.info("WALLET", "Tạo yêu cầu nạp tiền", {
@@ -106,7 +117,9 @@ export const WalletService = {
    * Cập nhật trạng thái nạp tiền sau khi VNPay IPN callback
    */
   async updateTopupStatus(transactionId, vnpResponseCode, vnpTransactionRef) {
-    const transaction = await WalletTransactionModel.findById(transactionId).lean();
+    const transaction = await WalletTransactionModel.findById(
+      transactionId
+    ).lean();
 
     if (!transaction) {
       throw new Error("Giao dịch nạp tiền không tồn tại");
@@ -168,7 +181,13 @@ export const WalletService = {
   /**
    * Trừ tiền từ ví (khi thanh toán đơn hàng)
    */
-  async deduct(userId, amount, referenceId, referenceType = "order", description = null) {
+  async deduct(
+    userId,
+    amount,
+    referenceId,
+    referenceType = "order",
+    description = null
+  ) {
     if (amount <= 0) {
       throw new Error("Số tiền phải lớn hơn 0");
     }
@@ -185,7 +204,9 @@ export const WalletService = {
 
     if (wallet.balance < amount) {
       throw new Error(
-        `Số dư ví không đủ. Số dư hiện tại: ${wallet.balance.toLocaleString("vi-VN")} VNĐ, cần: ${amount.toLocaleString("vi-VN")} VNĐ`
+        `Số dư ví không đủ. Số dư hiện tại: ${wallet.balance.toLocaleString(
+          "vi-VN"
+        )} VNĐ, cần: ${amount.toLocaleString("vi-VN")} VNĐ`
       );
     }
 
@@ -203,7 +224,9 @@ export const WalletService = {
       status: "completed",
       reference_id: referenceId,
       reference_type: referenceType,
-      description: description || `Thanh toán đơn hàng: ${amount.toLocaleString("vi-VN")} VNĐ`,
+      description:
+        description ||
+        `Thanh toán đơn hàng: ${amount.toLocaleString("vi-VN")} VNĐ`,
     });
 
     logger.info("WALLET", "Trừ tiền từ ví thành công", {
@@ -217,9 +240,15 @@ export const WalletService = {
   },
 
   /**
-   * Thêm tiền vào ví (khi hoàn tiền)
+   * Thêm tiền vào ví (khi hoàn tiền hoặc seller nhận tiền từ order)
    */
-  async add(userId, amount, referenceId, referenceType = "return", description = null) {
+  async add(
+    userId,
+    amount,
+    referenceId,
+    referenceType = "return",
+    description = null
+  ) {
     if (amount <= 0) {
       throw new Error("Số tiền phải lớn hơn 0");
     }
@@ -241,6 +270,35 @@ export const WalletService = {
       throw new Error("Ví đang bị khóa hoặc đã đóng");
     }
 
+    // Xác định type transaction dựa trên referenceType
+    let transactionType = "refund";
+    if (referenceType === "order") {
+      transactionType = "payment"; // Seller nhận tiền từ order
+
+      // Kiểm tra duplicate transaction cho order (tránh cộng tiền 2 lần)
+      if (referenceId) {
+        const existingTransaction = await WalletTransactionModel.findOne({
+          user_id: userId,
+          reference_id: referenceId,
+          reference_type: "order",
+          type: "payment",
+          status: "completed",
+        }).lean();
+
+        if (existingTransaction) {
+          logger.warn("WALLET", "Đã có transaction cho order này, bỏ qua", {
+            userId,
+            referenceId,
+            existingTransactionId: existingTransaction._id.toString(),
+          });
+          // Trả về transaction đã tồn tại thay vì tạo mới
+          return formatTransactionForFrontend(existingTransaction);
+        }
+      }
+    } else if (referenceType === "return") {
+      transactionType = "refund"; // User nhận tiền hoàn trả
+    }
+
     // Thêm tiền vào ví
     await WalletModel.findByIdAndUpdate(walletDoc._id, {
       $inc: { balance: amount },
@@ -250,12 +308,13 @@ export const WalletService = {
     const transaction = await WalletTransactionModel.create({
       wallet_id: walletDoc._id,
       user_id: userId,
-      type: "refund",
+      type: transactionType,
       amount: amount,
       status: "completed",
       reference_id: referenceId,
       reference_type: referenceType,
-      description: description || `Hoàn tiền: ${amount.toLocaleString("vi-VN")} VNĐ`,
+      description:
+        description || `Hoàn tiền: ${amount.toLocaleString("vi-VN")} VNĐ`,
     });
 
     logger.info("WALLET", "Thêm tiền vào ví thành công", {
@@ -315,5 +374,85 @@ export const WalletService = {
 
     return formatTransactionForFrontend(transaction);
   },
-};
 
+  /**
+   * Hủy giao dịch pending (chỉ cho topup)
+   */
+  async cancelTransaction(transactionId, userId) {
+    const transaction = await WalletTransactionModel.findOne({
+      _id: transactionId,
+      user_id: userId,
+    }).lean();
+
+    if (!transaction) {
+      throw new Error("Giao dịch không tồn tại hoặc bạn không có quyền");
+    }
+
+    if (transaction.type !== "topup") {
+      throw new Error("Chỉ có thể hủy giao dịch nạp tiền");
+    }
+
+    if (transaction.status !== "pending") {
+      throw new Error(
+        `Không thể hủy giao dịch đã ${
+          transaction.status === "completed"
+            ? "hoàn thành"
+            : transaction.status === "failed"
+            ? "thất bại"
+            : "bị hủy"
+        }`
+      );
+    }
+
+    await WalletTransactionModel.findByIdAndUpdate(transactionId, {
+      $set: { status: "cancelled" },
+    });
+
+    logger.info("WALLET", "Đã hủy giao dịch nạp tiền", {
+      userId: userId.toString(),
+      transactionId,
+    });
+
+    const updated = await WalletTransactionModel.findById(transactionId).lean();
+    return formatTransactionForFrontend(updated);
+  },
+
+  /**
+   * Admin: Lấy tất cả giao dịch trong hệ thống
+   */
+  async getAllTransactions(filters = {}) {
+    const { type, status, limit = 50, offset = 0 } = filters;
+
+    const query = {};
+
+    if (type) {
+      query.type = type;
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
+    const transactions = await WalletTransactionModel.find(query)
+      .populate("user_id", "full_name email")
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(offset))
+      .lean();
+
+    const total = await WalletTransactionModel.countDocuments(query);
+
+    return {
+      transactions: transactions.map((t) => ({
+        ...formatTransactionForFrontend(t),
+        user_name: t.user_id?.full_name || null,
+        user_email: t.user_id?.email || null,
+        created_at: t.createdAt,
+        updated_at: t.updatedAt,
+      })),
+      total,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    };
+  },
+};

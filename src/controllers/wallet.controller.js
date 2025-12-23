@@ -85,5 +85,44 @@ export const WalletController = {
       throw e;
     }
   }),
-};
 
+  cancelTransaction: handle(async (req, res) => {
+    const userId = req.currentUser.id;
+    const transactionId = req.params.transactionId;
+
+    logger.info("WALLET", "Hủy giao dịch", { userId, transactionId });
+    try {
+      const transaction = await WalletService.cancelTransaction(
+        transactionId,
+        userId
+      );
+      logger.info("WALLET", "Hủy giao dịch thành công", {
+        userId,
+        transactionId,
+      });
+      res.json(transaction);
+    } catch (e) {
+      if (
+        e.message.includes("không tồn tại") ||
+        e.message.includes("quyền") ||
+        e.message.includes("không thể hủy")
+      ) {
+        return res.status(400).json({ message: e.message });
+      }
+      throw e;
+    }
+  }),
+
+  getAllTransactionsForAdmin: handle(async (req, res) => {
+    const { type, status, limit, offset } = req.query;
+
+    logger.debug("WALLET", "Admin lấy tất cả giao dịch", { type, status });
+    const result = await WalletService.getAllTransactions({
+      type,
+      status,
+      limit,
+      offset,
+    });
+    res.json(result);
+  }),
+};

@@ -6,26 +6,15 @@ import dotenv from "dotenv";
 import helmet from "helmet";
 dotenv.config();
 
-// Import logger trước để dùng
+// Import logger và env validator
 import { logger } from "./utils/logger.js";
+import { validateEnv } from "./utils/env_validator.js";
 
-// Kiểm tra các biến môi trường bắt buộc khi khởi động
-const requiredEnvVars = ["JWT_ACCESS_SECRET", "MONGODB_URI"];
-
-const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
-
-if (missingVars.length > 0) {
-  logger.error(
-    "SERVER",
-    `Thiếu các biến môi trường bắt buộc: ${missingVars.join(", ")}`
-  );
-  logger.error(
-    "SERVER",
-    "Vui lòng kiểm tra file .env và đảm bảo các biến sau đã được cấu hình:"
-  );
-  missingVars.forEach((varName) => {
-    logger.error("SERVER", `   - ${varName}`);
-  });
+// Validate tất cả biến môi trường khi khởi động
+try {
+  validateEnv();
+} catch (error) {
+  logger.error("SERVER", error.message);
   process.exit(1);
 }
 
@@ -66,6 +55,7 @@ import shipperRoutes from "./routes/shipper.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
 import returnRoutes from "./routes/return.routes.js";
 import walletRoutes from "./routes/wallet.routes.js";
+import shippingRoutes from "./routes/shipping.routes.js";
 
 // Import reservation scheduler
 import { startReservationScheduler } from "./services/reservation.service.js";
@@ -83,13 +73,26 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-hashes'"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "'unsafe-hashes'",
+          "https://cdn.jsdelivr.net",
+          "https://cdnjs.cloudflare.com",
+        ],
         scriptSrcAttr: ["'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "https:", "http:"],
-        connectSrc: ["'self'", "https://sandbox.vnpayment.vn"],
+        connectSrc: [
+          "'self'",
+          "https://sandbox.vnpayment.vn",
+          "https://cdn.jsdelivr.net",
+          "https://cdnjs.cloudflare.com",
+        ],
+        fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "data:"],
       },
     },
     crossOriginEmbedderPolicy: false,
+    xssFilter: false, // Tắt x-xss-protection header vì đã deprecated
   })
 );
 
@@ -125,15 +128,25 @@ app.use(
   express.static(path.join(__dirname, "../public/admin"), {
     setHeaders: (res, filePath) => {
       // Không yêu cầu authentication cho static files
+      // Set cache headers cho static resources (1 năm với immutable)
       if (
         filePath.endsWith(".ico") ||
         filePath.endsWith(".css") ||
         filePath.endsWith(".js") ||
         filePath.endsWith(".png") ||
         filePath.endsWith(".jpg") ||
-        filePath.endsWith(".svg")
+        filePath.endsWith(".jpeg") ||
+        filePath.endsWith(".gif") ||
+        filePath.endsWith(".svg") ||
+        filePath.endsWith(".woff") ||
+        filePath.endsWith(".woff2") ||
+        filePath.endsWith(".ttf") ||
+        filePath.endsWith(".eot")
       ) {
-        res.setHeader("Cache-Control", "public, max-age=3600");
+        // Cache static resources for 1 year with immutable directive
+        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        // Remove Expires header if present (prefer Cache-Control)
+        res.removeHeader("Expires");
       }
     },
   })
@@ -176,6 +189,7 @@ app.use("/shipper", shipperRoutes);
 app.use("/conversations", chatRoutes);
 app.use("/returns", returnRoutes);
 app.use("/wallet", walletRoutes);
+app.use("/shipping", shippingRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

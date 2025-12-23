@@ -17,6 +17,7 @@ const notificationSchema = new mongoose.Schema(
         "message",
         "order_delivered",
         "delivery_confirmed",
+        "return",
       ],
       required: true,
     },

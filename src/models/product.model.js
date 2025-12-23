@@ -71,6 +71,13 @@ const productSchema = new mongoose.Schema(
 productSchema.index({ store_id: 1 });
 productSchema.index({ category_id: 1 });
 productSchema.index({ status: 1 });
+productSchema.index({ price: 1 });
+productSchema.index({ rating: -1 });
+productSchema.index({ discount_percentage: -1 });
+productSchema.index({ createdAt: -1 });
+
+// Text index for search
+productSchema.index({ title: 'text', description: 'text' });
 
 // Virtual để tính final_price
 productSchema.virtual("final_price").get(function () {

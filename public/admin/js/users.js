@@ -19,7 +19,9 @@ async function loadUsers() {
     const response = await apiCall("/users");
 
     if (response && response.ok) {
-      users = await response.json(); // Lưu danh sách user vào biến global
+      const data = await response.json(); // Lấy dữ liệu từ API
+      // Xử lý cả 2 format: array trực tiếp hoặc object với property users
+      users = Array.isArray(data) ? data : (data.users || []); // Lưu danh sách user vào biến global
       displayUsers(); // Gọi hàm để hiển thị dữ liệu lên bảng
     } else {
       // Xử lý lỗi nếu API trả về lỗi
@@ -192,15 +194,14 @@ function openAddUserModal() {
  * @param {string} userIdString ID của người dùng cần sửa (dưới dạng chuỗi từ HTML).
  */
 async function openEditUserModal(userIdString) {
-  // SỬA: Chuyển đổi userId dạng chuỗi từ nút bấm thành dạng số
-  const userIdNumber = parseInt(userIdString, 10);
-  if (isNaN(userIdNumber)) {
+  // ID từ backend là string, không cần parse
+  if (!userIdString) {
     showAlert("ID người dùng không hợp lệ.", "error");
     return;
   }
 
-  // Tìm user trong mảng users (so sánh số với số)
-  const user = users.find((u) => u.id === userIdNumber);
+  // Tìm user trong mảng users (so sánh string với string)
+  const user = users.find((u) => String(u.id) === String(userIdString));
   if (!user) {
     showAlert(
       "Không tìm thấy thông tin người dùng trong danh sách đã tải.",

@@ -5,6 +5,8 @@ import { authorizeByRoles } from "../middleware/authorization.js";
 import { validate } from "../middleware/validation.js";
 import { ROLES } from "../constants/roles.js";
 import { OrderController } from "../controllers/order.controller.js";
+import { logger } from "../utils/logger.js";
+import { handle } from "../controllers/base.controller.js";
 
 const router = Router();
 
@@ -27,7 +29,9 @@ const createOrderValidation = [
   body("payment_method")
     .optional()
     .isIn(["cash", "vnpay", "wallet"])
-    .withMessage("Phương thức thanh toán không hợp lệ. Chỉ chấp nhận: cash, vnpay, wallet"),
+    .withMessage(
+      "Phương thức thanh toán không hợp lệ. Chỉ chấp nhận: cash, vnpay, wallet"
+    ),
   validate,
 ];
 
@@ -51,7 +55,6 @@ router.get(
   OrderController.listByStore
 );
 
-import { handle } from "../controllers/base.controller.js";
 import { OrderModel } from "../models/order.model.js";
 
 router.get(
@@ -98,6 +101,7 @@ router.get(
     const orders = await OrderModel.find(query)
       .populate("buyer_id", "full_name email")
       .populate("store_id", "name")
+      .populate("shipper_id", "full_name email")
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip(parseInt(offset))
@@ -108,38 +112,38 @@ router.get(
     const firstOrderItems = await OrderItemModel.aggregate([
       {
         $match: {
-          order_id: { $in: orderIds }
-        }
+          order_id: { $in: orderIds },
+        },
       },
       {
-        $sort: { order_id: 1, _id: 1 }
+        $sort: { order_id: 1, _id: 1 },
       },
       {
         $group: {
           _id: "$order_id",
-          firstItem: { $first: "$$ROOT" }
-        }
+          firstItem: { $first: "$$ROOT" },
+        },
       },
       {
         $lookup: {
           from: "products",
           localField: "firstItem.product_id",
           foreignField: "_id",
-          as: "product"
-        }
+          as: "product",
+        },
       },
       {
         $unwind: {
           path: "$product",
-          preserveNullAndEmptyArrays: true
-        }
+          preserveNullAndEmptyArrays: true,
+        },
       },
       {
         $project: {
           order_id: "$_id",
-          image_url: "$product.image_url"
-        }
-      }
+          image_url: "$product.image_url",
+        },
+      },
     ]);
 
     const imageMap = new Map();
@@ -156,6 +160,9 @@ router.get(
         buyer_email: order.buyer_id?.email || null,
         store_id: order.store_id?._id.toString() || order.store_id.toString(),
         store_name: order.store_id?.name || null,
+        shipper_id: order.shipper_id?._id?.toString() || order.shipper_id?.toString() || null,
+        shipper_name: order.shipper_id?.full_name || null,
+        shipper_email: order.shipper_id?.email || null,
         first_item_image_url: imageMap.get(order._id.toString()) || null,
       }))
     );
@@ -250,6 +257,21 @@ router.post(
   })
 );
 
+// POST /orders/:orderId/cancel - Hủy đơn hàng (Buyer/Seller/Admin)
+router.post(
+  "/:orderId/cancel",
+  orderIdValidation,
+  [
+    body("reason")
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage("Lý do hủy tối đa 500 ký tự"),
+    validate,
+  ],
+  OrderController.cancel
+);
+
 // POST /orders/:orderId/confirm-delivery - Customer xác nhận đã nhận hàng
 router.post(
   "/:orderId/confirm-delivery",
@@ -283,11 +305,9 @@ router.post(
     }
 
     if (order.status !== "delivered") {
-      return res
-        .status(400)
-        .json({
-          message: "Chỉ có thể xác nhận đơn hàng ở trạng thái 'delivered'",
-        });
+      return res.status(400).json({
+        message: "Chỉ có thể xác nhận đơn hàng ở trạng thái 'delivered'",
+      });
     }
 
     const updateData = {
@@ -315,6 +335,7 @@ router.post(
           },
         });
       }
+
     } else {
       // Customer chưa nhận được → Tạo notification cho seller để xử lý
       const store = await StoreModel.findById(order.store_id)
